@@ -1,7 +1,8 @@
 export default function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center h-full w-full">
-      <div className="w-8 h-8 border-4 border-[var(--color-brand-accent)] border-t-transparent rounded-full animate-spin" />
+    <div className="flex flex-col items-center justify-center h-full w-full">
+      <div className="w-10 h-10 border-[3px] border-[#2E86AB] border-t-transparent rounded-full animate-spin" />
+      <p className="text-slate-400 text-sm mt-3">Loading&hellip;</p>
     </div>
   )
 }

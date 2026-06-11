@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase'
-import { AppUser } from '@/types/user.types'
+import { AppUser, UserRole } from '@/types/user.types'
 import { ServiceResult } from '@/types/api.types'
 import { TABLES } from '@/lib/constants'
 
@@ -21,6 +21,33 @@ export async function getCurrentUser(): Promise<ServiceResult<AppUser>> {
     return { success: false, error: error.message }
   }
 
+  return { success: true, data: data as AppUser }
+}
+
+export async function getAllUsers(): Promise<ServiceResult<AppUser[]>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.USERS)
+    .select('*')
+    .order('name')
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as AppUser[] }
+}
+
+export async function updateUser(
+  id: string,
+  updates: { role?: UserRole; countries?: string[]; name?: string }
+): Promise<ServiceResult<AppUser>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.USERS)
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
   return { success: true, data: data as AppUser }
 }
 

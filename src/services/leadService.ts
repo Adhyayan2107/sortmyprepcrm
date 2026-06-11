@@ -55,6 +55,36 @@ export async function updateLeadStage(
   return { success: true, data: data as Lead }
 }
 
+export async function updateLeadAssignment(
+  id: string,
+  assignedTo: string | null
+): Promise<ServiceResult<Lead>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.LEADS)
+    .update({ assigned_to: assignedTo, last_activity: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Lead }
+}
+
+export async function bulkAssignLeads(
+  ids: string[],
+  assignedTo: string | null
+): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from(TABLES.LEADS)
+    .update({ assigned_to: assignedTo, last_activity: new Date().toISOString() })
+    .in('id', ids)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
 export async function bulkInsertLeads(
   leads: LeadInsert[]
 ): Promise<ServiceResult<{ inserted: number; duplicates: string[] }>> {

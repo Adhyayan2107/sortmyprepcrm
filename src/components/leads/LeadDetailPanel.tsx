@@ -3,44 +3,93 @@
 import { useEffect, useState } from 'react'
 import { Lead } from '@/types/lead.types'
 import { PipelineStage } from '@/types/pipeline.types'
+import { ActivityLog } from '@/types/activity.types'
+import { AppUser } from '@/types/user.types'
 import { PIPELINE_STAGES } from '@/lib/constants'
-import { getLeadById, updateLeadStage } from '@/services/leadService'
+import { getLeadById, updateLeadStage, updateLeadAssignment } from '@/services/leadService'
+import { getActivityForLead, addNote, logStageChange } from '@/services/activityService'
+import { getAllUsers } from '@/services/userService'
+import { useUser } from '@/hooks/useUser'
 import StageBadge from '@/components/ui/StageBadge'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import ActivityTimeline from '@/components/leads/ActivityTimeline'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
 
 interface LeadDetailPanelProps {
   leadId: string
   onClose: () => void
   onStageChange?: (id: string, stage: PipelineStage) => void
+  onViewScripts?: (leadId: string) => void
 }
 
-export default function LeadDetailPanel({ leadId, onClose, onStageChange }: LeadDetailPanelProps) {
+export default function LeadDetailPanel({
+  leadId,
+  onClose,
+  onStageChange,
+  onViewScripts,
+}: LeadDetailPanelProps) {
+  const { user: currentUser } = useUser()
   const [lead, setLead] = useState<Lead | null>(null)
+  const [activity, setActivity] = useState<ActivityLog[]>([])
+  const [teamUsers, setTeamUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [noteText, setNoteText] = useState('')
+  const [addingNote, setAddingNote] = useState(false)
+  const [activeTab, setActiveTab] = useState<'info' | 'activity'>('info')
 
   useEffect(() => {
     setLoading(true)
-    getLeadById(leadId).then((res) => {
-      if (res.success) setLead(res.data)
+    Promise.all([
+      getLeadById(leadId),
+      getActivityForLead(leadId),
+      getAllUsers(),
+    ]).then(([leadRes, actRes, usersRes]) => {
+      if (leadRes.success) setLead(leadRes.data)
+      if (actRes.success) setActivity(actRes.data)
+      if (usersRes.success) setTeamUsers(usersRes.data)
       setLoading(false)
     })
   }, [leadId])
 
   async function handleStageChange(stage: PipelineStage) {
-    if (!lead) return
+    if (!lead || !currentUser) return
     setSaving(true)
+    const prevStage = lead.stage
     const res = await updateLeadStage(lead.id, stage)
     if (res.success) {
       setLead(res.data)
+      await logStageChange(lead.id, prevStage, stage, currentUser.id)
+      const actRes = await getActivityForLead(lead.id)
+      if (actRes.success) setActivity(actRes.data)
       onStageChange?.(lead.id, stage)
     }
     setSaving(false)
   }
 
+  async function handleAssignmentChange(assignedTo: string) {
+    if (!lead) return
+    setSaving(true)
+    const val = assignedTo === '' ? null : assignedTo
+    const res = await updateLeadAssignment(lead.id, val)
+    if (res.success) setLead(res.data)
+    setSaving(false)
+  }
+
+  async function handleAddNote() {
+    if (!noteText.trim() || !lead || !currentUser) return
+    setAddingNote(true)
+    const res = await addNote(lead.id, noteText.trim(), currentUser.id)
+    if (res.success) {
+      setActivity((prev) => [res.data, ...prev])
+      setNoteText('')
+    }
+    setAddingNote(false)
+  }
+
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
         <h2 className="text-base font-semibold text-[var(--color-brand-primary)] truncate pr-4">
           {lead?.name ?? 'Lead Details'}
@@ -52,13 +101,31 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange }: Lead
         </button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200">
+        {(['info', 'activity'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2.5 text-sm font-medium capitalize transition-colors ${
+              activeTab === tab
+                ? 'border-b-2 border-[var(--color-brand-accent)] text-[var(--color-brand-accent)]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <LoadingSpinner />
         ) : !lead ? (
           <p className="text-center text-gray-400 mt-12">Lead not found</p>
-        ) : (
+        ) : activeTab === 'info' ? (
           <div className="px-5 py-4 space-y-5">
+            {/* Contact */}
             <div className="space-y-1">
               <p className="text-sm text-gray-500">
                 {[lead.city, lead.country].filter(Boolean).join(', ')}
@@ -73,6 +140,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange }: Lead
               {lead.email && <p className="text-sm text-gray-600">{lead.email}</p>}
             </div>
 
+            {/* Curriculum tags */}
             <div className="flex flex-wrap gap-1">
               {(lead.curriculum ?? []).map((c) => (
                 <span key={c} className="inline-block bg-[var(--color-brand-light)] text-[var(--color-brand-primary)] text-xs px-2 py-0.5 rounded-full font-medium">
@@ -84,6 +152,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange }: Lead
               )}
             </div>
 
+            {/* Stage */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Pipeline Stage</p>
               <div className="flex items-center gap-2">
@@ -101,6 +170,23 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange }: Lead
               </div>
             </div>
 
+            {/* Assign to */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Assigned To</p>
+              <select
+                value={lead.assigned_to ?? ''}
+                onChange={(e) => handleAssignmentChange(e.target.value)}
+                disabled={saving}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)] disabled:opacity-60"
+              >
+                <option value="">Unassigned</option>
+                {teamUsers.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name ?? u.id.slice(0, 8)}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Meta */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-gray-400">Source</p>
@@ -126,6 +212,42 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange }: Lead
                 <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2">{lead.notes}</p>
               </div>
             )}
+
+            {onViewScripts && (
+              <button
+                onClick={() => onViewScripts(lead.id)}
+                className="w-full border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] rounded-lg py-2 text-sm font-medium hover:bg-[var(--color-brand-light)] transition-colors"
+              >
+                View Call Scripts
+              </button>
+            )}
+          </div>
+        ) : (
+          /* Activity tab */
+          <div className="px-5 py-4 space-y-4">
+            {/* Add note */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Add Note</p>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                rows={3}
+                placeholder="Write a note…"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)] resize-none"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={!noteText.trim() || addingNote}
+                className="mt-2 px-4 py-1.5 rounded-lg bg-[var(--color-brand-accent)] text-white text-sm font-medium disabled:opacity-50 hover:bg-[var(--color-brand-primary)] transition-colors"
+              >
+                {addingNote ? 'Saving…' : 'Save Note'}
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Timeline</p>
+              <ActivityTimeline entries={activity} />
+            </div>
           </div>
         )}
       </div>

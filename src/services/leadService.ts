@@ -106,20 +106,30 @@ export async function bulkInsertLeads(
 ): Promise<ServiceResult<{ inserted: number; duplicates: string[] }>> {
   const supabase = createClient()
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from(TABLES.LEADS)
     .select('name, country')
 
+  if (existingError) return { success: false, error: existingError.message }
+
   const existingSet = new Set(
-    (existing ?? []).map((r: { name: string; country: string }) => `${r.name}::${r.country}`)
+    (existing ?? []).map((r: { name: string; country: string }) => `${r.name.toLowerCase()}::${r.country.toLowerCase()}`)
   )
 
-  const toInsert = leads.filter(
-    (l) => !existingSet.has(`${l.name}::${l.country}`)
-  )
-  const duplicates = leads
-    .filter((l) => existingSet.has(`${l.name}::${l.country}`))
-    .map((l) => l.name)
+  // Deduplicate within the incoming batch itself
+  const seenInBatch = new Set<string>()
+  const toInsert: LeadInsert[] = []
+  const duplicates: string[] = []
+
+  for (const lead of leads) {
+    const key = `${lead.name.toLowerCase()}::${lead.country.toLowerCase()}`
+    if (existingSet.has(key) || seenInBatch.has(key)) {
+      duplicates.push(lead.name)
+    } else {
+      seenInBatch.add(key)
+      toInsert.push(lead)
+    }
+  }
 
   if (toInsert.length === 0) {
     return { success: true, data: { inserted: 0, duplicates } }

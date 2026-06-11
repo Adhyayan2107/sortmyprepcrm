@@ -11,6 +11,8 @@ export interface Script {
   created_by: string | null
   created_at: string
   archived: boolean
+  document_url: string | null
+  document_name: string | null
   avg_rating?: number
   rating_count?: number
 }
@@ -34,4 +36,6 @@ export interface ScriptUpdate {
   title?: string
   content?: string
   archived?: boolean
+  document_url?: string | null
+  document_name?: string | null
 }

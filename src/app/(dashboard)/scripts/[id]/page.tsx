@@ -8,6 +8,7 @@ import { getScriptById, updateScript, rateScript, getUserRating } from '@/servic
 import { useUser } from '@/hooks/useUser'
 import StarRating from '@/components/ui/StarRating'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import ScriptDocUpload from '@/components/scripts/ScriptDocUpload'
 
 export default function ScriptDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -158,6 +159,18 @@ export default function ScriptDetailPage() {
               {script.content ?? 'No content yet.'}
             </pre>
           )}
+        </div>
+
+        {/* Document */}
+        <div className="border-t border-gray-200 pt-5">
+          <ScriptDocUpload
+            scriptId={script.id}
+            documentUrl={script.document_url}
+            documentName={script.document_name}
+            onUpdate={(url, name) =>
+              setScript((prev) => prev ? { ...prev, document_url: url, document_name: name } : null)
+            }
+          />
         </div>
 
         {/* Rate this script */}

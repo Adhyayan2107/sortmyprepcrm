@@ -136,6 +136,44 @@ export async function incrementUsageCount(id: string): Promise<void> {
   await supabase.rpc('increment_script_usage', { script_id: id })
 }
 
+export async function uploadScriptDocument(
+  scriptId: string,
+  file: File
+): Promise<ServiceResult<{ url: string; name: string }>> {
+  const supabase = createClient()
+  const ext = file.name.split('.').pop() ?? 'bin'
+  const path = `${scriptId}/${Date.now()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('script-docs')
+    .upload(path, file, { upsert: true })
+
+  if (uploadError) return { success: false, error: uploadError.message }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('script-docs')
+    .getPublicUrl(path)
+
+  const { error: updateError } = await supabase
+    .from(TABLES.SCRIPTS)
+    .update({ document_url: publicUrl, document_name: file.name })
+    .eq('id', scriptId)
+
+  if (updateError) return { success: false, error: updateError.message }
+  return { success: true, data: { url: publicUrl, name: file.name } }
+}
+
+export async function removeScriptDocument(scriptId: string): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from(TABLES.SCRIPTS)
+    .update({ document_url: null, document_name: null })
+    .eq('id', scriptId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
 export async function getUserRating(
   scriptId: string,
   userId: string

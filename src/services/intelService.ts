@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import claude from '@/lib/claude'
+import { generateCompletion } from '@/lib/aiProvider'
 import { Lead } from '@/types/lead.types'
 import { ServiceResult } from '@/types/api.types'
 
@@ -35,22 +35,13 @@ export async function generateIntelBrief(
   websiteText: string
 ): Promise<ServiceResult<string>> {
   try {
-    const message = await claude.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
-      system: INTEL_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: `Company name: ${name}\n\nWebsite content:\n${websiteText}`,
-        },
-      ],
-    })
-    const content = message.content[0]
-    if (content.type !== 'text') return { success: false, error: 'Unexpected response type' }
-    return { success: true, data: content.text }
+    const text = await generateCompletion(
+      INTEL_SYSTEM_PROMPT,
+      `Company name: ${name}\n\nWebsite content:\n${websiteText}`
+    )
+    return { success: true, data: text }
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Claude API error' }
+    return { success: false, error: err instanceof Error ? err.message : 'AI provider error' }
   }
 }
 

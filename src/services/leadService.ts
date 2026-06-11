@@ -85,6 +85,22 @@ export async function bulkAssignLeads(
   return { success: true, data: null }
 }
 
+export async function saveIntelAnnotation(
+  id: string,
+  annotation: string
+): Promise<ServiceResult<Lead>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.LEADS)
+    .update({ intel_annotation: annotation })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Lead }
+}
+
 export async function bulkInsertLeads(
   leads: LeadInsert[]
 ): Promise<ServiceResult<{ inserted: number; duplicates: string[] }>> {

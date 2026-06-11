@@ -13,6 +13,7 @@ import { useUser } from '@/hooks/useUser'
 import StageBadge from '@/components/ui/StageBadge'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import ActivityTimeline from '@/components/leads/ActivityTimeline'
+import IntelBrief from '@/components/leads/IntelBrief'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
 
 interface LeadDetailPanelProps {
@@ -36,7 +37,7 @@ export default function LeadDetailPanel({
   const [saving, setSaving] = useState(false)
   const [noteText, setNoteText] = useState('')
   const [addingNote, setAddingNote] = useState(false)
-  const [activeTab, setActiveTab] = useState<'info' | 'activity'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'intel'>('info')
 
   useEffect(() => {
     setLoading(true)
@@ -103,7 +104,7 @@ export default function LeadDetailPanel({
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
-        {(['info', 'activity'] as const).map((tab) => (
+        {(['info', 'activity', 'intel'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -221,6 +222,13 @@ export default function LeadDetailPanel({
                 View Call Scripts
               </button>
             )}
+          </div>
+        ) : activeTab === 'intel' ? (
+          <div className="px-5 py-4">
+            <IntelBrief
+              lead={lead}
+              onUpdate={(updates) => setLead((prev) => prev ? { ...prev, ...updates } : prev)}
+            />
           </div>
         ) : (
           /* Activity tab */

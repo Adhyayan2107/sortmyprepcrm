@@ -16,6 +16,8 @@ export interface Lead {
   assigned_to: string | null
   notes: string | null
   intel_brief: string | null
+  intel_fetched_at: string | null
+  intel_annotation: string | null
   created_at: string
   last_activity: string
 }

@@ -1,0 +1,33 @@
+export const TABLES = {
+  LEADS: 'leads',
+  USERS: 'users',
+  ACTIVITY_LOG: 'activity_log',
+  SCRIPTS: 'scripts',
+  SCRIPT_RATINGS: 'script_ratings',
+} as const
+
+export const PIPELINE_STAGES = [
+  'New Lead',
+  'Contacted',
+  'Responded',
+  'Meeting Booked',
+  'Meeting Done',
+  'Negotiating',
+  'Confirmed',
+  'Blocked/Dead',
+] as const
+
+export const CURRICULA = ['IB', 'IGCSE', 'A-Levels', 'AS-Levels'] as const
+
+export const LEAD_SOURCES = ['Google Maps', 'Directory', 'Manual'] as const
+
+export const CONTACT_TYPES = [
+  'School',
+  'Coaching Center',
+  'Private Teacher',
+  'Parent',
+  'Career Counsellor',
+] as const
+
+export const DEFAULT_MAP_CENTER: [number, number] = [45.0, 25.0]
+export const DEFAULT_MAP_ZOOM = 4

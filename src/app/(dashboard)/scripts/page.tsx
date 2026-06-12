@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { CONTACT_TYPES } from '@/lib/constants'
 import { ContactType } from '@/types/script.types'
 import { useScripts } from '@/hooks/useScripts'
@@ -18,6 +18,21 @@ export default function ScriptsPage() {
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setNewContent(reader.result)
+      }
+    }
+    reader.readAsText(file)
+    // Reset so same file can be re-selected if needed
+    e.target.value = ''
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -59,6 +74,23 @@ export default function ScriptsPage() {
             onChange={(e) => setNewTitle(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
           />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-500 font-medium">Content</span>
+            <button
+              type="button"
+              className="text-xs text-[#2E86AB] hover:underline cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Import from file
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+          </div>
           <textarea
             rows={6}
             placeholder="Script content (markdown supported)…"

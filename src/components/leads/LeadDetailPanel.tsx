@@ -14,6 +14,7 @@ import StageBadge from '@/components/ui/StageBadge'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import ActivityTimeline from '@/components/leads/ActivityTimeline'
 import IntelBrief from '@/components/leads/IntelBrief'
+import LeadFormModal from '@/components/leads/LeadFormModal'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
 
 interface LeadDetailPanelProps {
@@ -38,6 +39,7 @@ export default function LeadDetailPanel({
   const [noteText, setNoteText] = useState('')
   const [addingNote, setAddingNote] = useState(false)
   const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'intel'>('info')
+  const [showEditModal, setShowEditModal] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -95,11 +97,25 @@ export default function LeadDetailPanel({
         <h2 className="text-base font-semibold text-[var(--color-brand-primary)] truncate pr-4">
           {lead?.name ?? 'Lead Details'}
         </h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {lead && (
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="text-slate-400 hover:text-[#2E86AB] transition-colors"
+              title="Edit lead"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z" />
+              </svg>
+            </button>
+          )}
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -259,6 +275,15 @@ export default function LeadDetailPanel({
           </div>
         )}
       </div>
+
+      {showEditModal && lead && (
+        <LeadFormModal
+          mode="edit"
+          initial={lead}
+          onSave={(updated) => { setLead(updated); setShowEditModal(false) }}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </div>
   )
 }

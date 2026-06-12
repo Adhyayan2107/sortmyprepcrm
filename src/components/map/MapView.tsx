@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { LeadMapPin } from '@/types/lead.types'
@@ -12,12 +12,29 @@ interface MapViewProps {
   pins: LeadMapPin[]
   onPinClick: (id: string) => void
   updatedPin?: { id: string; stage: PipelineStage } | null
+  onBoxSelect?: (ids: string[]) => void
 }
 
-export default function MapView({ pins, onPinClick, updatedPin }: MapViewProps) {
+interface DragStart {
+  x: number
+  y: number
+}
+
+interface BoxRect {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+export default function MapView({ pins, onPinClick, updatedPin, onBoxSelect }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
+
+  const [selectMode, setSelectMode] = useState(false)
+  const [dragStart, setDragStart] = useState<DragStart | null>(null)
+  const [boxRect, setBoxRect] = useState<BoxRect | null>(null)
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -92,5 +109,138 @@ export default function MapView({ pins, onPinClick, updatedPin }: MapViewProps) 
     el.style.background = getStageColor(updatedPin.stage)
   }, [updatedPin])
 
-  return <div ref={containerRef} className="w-full h-full" />
+  // Enable / disable drag pan when select mode changes
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (selectMode) {
+      map.dragPan.disable()
+    } else {
+      map.dragPan.enable()
+    }
+  }, [selectMode])
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!selectMode) return
+      const container = containerRef.current
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      setDragStart({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+      setBoxRect(null)
+    },
+    [selectMode]
+  )
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!selectMode || !dragStart) return
+      const container = containerRef.current
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      const curX = e.clientX - rect.left
+      const curY = e.clientY - rect.top
+      setBoxRect({
+        left: Math.min(dragStart.x, curX),
+        top: Math.min(dragStart.y, curY),
+        width: Math.abs(curX - dragStart.x),
+        height: Math.abs(curY - dragStart.y),
+      })
+    },
+    [selectMode, dragStart]
+  )
+
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!selectMode || !dragStart) return
+      const map = mapRef.current
+      const container = containerRef.current
+      if (!map || !container) return
+
+      const rect = container.getBoundingClientRect()
+      const curX = e.clientX - rect.left
+      const curY = e.clientY - rect.top
+
+      const x0 = Math.min(dragStart.x, curX)
+      const y0 = Math.min(dragStart.y, curY)
+      const x1 = Math.max(dragStart.x, curX)
+      const y1 = Math.max(dragStart.y, curY)
+
+      const sw = map.unproject([x0, y1])
+      const ne = map.unproject([x1, y0])
+
+      const minLng = sw.lng
+      const maxLng = ne.lng
+      const minLat = sw.lat
+      const maxLat = ne.lat
+
+      const matchingIds = pins
+        .filter((p) => p.lng >= minLng && p.lng <= maxLng && p.lat >= minLat && p.lat <= maxLat)
+        .map((p) => p.id)
+
+      if (onBoxSelect) onBoxSelect(matchingIds)
+
+      setBoxRect(null)
+      setDragStart(null)
+      setSelectMode(false)
+    },
+    [selectMode, dragStart, pins, onBoxSelect]
+  )
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full"
+      style={{ position: 'relative', cursor: selectMode ? 'crosshair' : undefined }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      {/* Box-select rectangle overlay */}
+      {boxRect && (
+        <div
+          style={{
+            position: 'absolute',
+            left: boxRect.left,
+            top: boxRect.top,
+            width: boxRect.width,
+            height: boxRect.height,
+            border: '2px solid #2E86AB',
+            background: 'rgba(46,134,171,0.1)',
+            pointerEvents: 'none',
+            zIndex: 5,
+          }}
+        />
+      )}
+
+      {/* Draw Area toggle button */}
+      <button
+        type="button"
+        onClick={() => {
+          setSelectMode((prev) => !prev)
+          setDragStart(null)
+          setBoxRect(null)
+        }}
+        className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white shadow-md border text-xs font-medium cursor-pointer select-none"
+        style={{
+          color: selectMode ? '#2E86AB' : '#6b7280',
+          borderColor: selectMode ? '#2E86AB' : '#e5e7eb',
+        }}
+      >
+        {/* Dashed square icon */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray={selectMode ? undefined : '2 1.5'}
+        >
+          <rect x="1" y="1" width="12" height="12" rx="1" />
+        </svg>
+        {selectMode ? 'Cancel' : 'Select Area'}
+      </button>
+    </div>
+  )
 }

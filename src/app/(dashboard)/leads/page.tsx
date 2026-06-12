@@ -4,18 +4,23 @@ import { useState, useMemo, useEffect } from 'react'
 import { useLeadRows } from '@/hooks/useLeads'
 import { PIPELINE_STAGES } from '@/lib/constants'
 import { PipelineStage } from '@/types/pipeline.types'
+import { Lead, LeadListRow } from '@/types/lead.types'
 import { AppUser } from '@/types/user.types'
 import { getAllUsers } from '@/services/userService'
 import { bulkAssignLeads } from '@/services/leadService'
 import StageBadge from '@/components/ui/StageBadge'
 import LeadDetailPanel from '@/components/leads/LeadDetailPanel'
+import LeadFormModal from '@/components/leads/LeadFormModal'
 import ScriptsModal from '@/components/scripts/ScriptsModal'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import EmptyState from '@/components/ui/EmptyState'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
+import { useUser } from '@/hooks/useUser'
 
 export default function LeadsPage() {
   const { rows, loading, error, refetch } = useLeadRows()
+  const { user: currentUser } = useUser()
+  const [viewMode, setViewMode] = useState<'all' | 'mine'>('all')
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'All'>('All')
   const [countryFilter, setCountryFilter] = useState('')
@@ -26,6 +31,8 @@ export default function LeadsPage() {
   const [bulkAssignTo, setBulkAssignTo] = useState('')
   const [bulkSaving, setBulkSaving] = useState(false)
   const [showScripts, setShowScripts] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [editRow, setEditRow] = useState<LeadListRow | null>(null)
 
   useEffect(() => {
     getAllUsers().then((res) => { if (res.success) setUsers(res.data) })
@@ -45,9 +52,10 @@ export default function LeadsPage() {
       const matchStage = stageFilter === 'All' || r.stage === stageFilter
       const matchCountry = !countryFilter || r.country === countryFilter
       const matchAssigned = !assignedFilter || r.assigned_to === assignedFilter
-      return matchSearch && matchStage && matchCountry && matchAssigned
+      const matchMine = viewMode === 'all' || r.assigned_to === currentUser?.id
+      return matchSearch && matchStage && matchCountry && matchAssigned && matchMine
     })
-  }, [rows, search, stageFilter, countryFilter, assignedFilter])
+  }, [rows, search, stageFilter, countryFilter, assignedFilter, viewMode, currentUser])
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -79,6 +87,16 @@ export default function LeadsPage() {
     setBulkSaving(false)
   }
 
+  function handleLeadCreated(_lead: Lead) {
+    refetch()
+    setShowAddModal(false)
+  }
+
+  function handleLeadEdited(_lead: Lead) {
+    refetch()
+    setEditRow(null)
+  }
+
   if (loading) return <LoadingSpinner />
   if (error) return <p className="text-red-500 p-4">{error}</p>
 
@@ -90,6 +108,37 @@ export default function LeadsPage() {
           <h1 className="text-2xl font-bold text-[var(--color-brand-primary)] flex-1">
             Leads <span className="text-base font-normal text-gray-400">({filtered.length})</span>
           </h1>
+          {/* All / My Leads tabs */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('all')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'all'
+                  ? 'bg-[#1E3A5F] text-white'
+                  : 'text-slate-500 hover:text-slate-700 bg-slate-100'
+              }`}
+            >
+              All Leads
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('mine')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'mine'
+                  ? 'bg-[#1E3A5F] text-white'
+                  : 'text-slate-500 hover:text-slate-700 bg-slate-100'
+              }`}
+            >
+              My Leads
+            </button>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#2E86AB] text-white hover:bg-[#1d6b8a] transition-colors"
+          >
+            + Add Lead
+          </button>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -188,6 +237,7 @@ export default function LeadsPage() {
                       {h}
                     </th>
                   ))}
+                  <th className="px-4 py-3 w-10" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -218,6 +268,18 @@ export default function LeadsPage() {
                         {assignedUser ? assignedUser.name ?? '—' : '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-500 cursor-pointer" onClick={() => setSelectedId(row.id)}>{formatDate(row.created_at)}</td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setEditRow(row)}
+                          className="text-slate-400 hover:text-[#2E86AB] transition-colors"
+                          title="Edit lead"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z" />
+                          </svg>
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}
@@ -240,6 +302,23 @@ export default function LeadsPage() {
       )}
 
       {showScripts && <ScriptsModal onClose={() => setShowScripts(false)} />}
+
+      {showAddModal && (
+        <LeadFormModal
+          mode="create"
+          onSave={handleLeadCreated}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {editRow && (
+        <LeadFormModal
+          mode="edit"
+          initial={editRow}
+          onSave={handleLeadEdited}
+          onClose={() => setEditRow(null)}
+        />
+      )}
     </div>
   )
 }

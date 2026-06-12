@@ -101,6 +101,34 @@ export async function saveIntelAnnotation(
   return { success: true, data: data as Lead }
 }
 
+export async function createLead(lead: LeadInsert): Promise<ServiceResult<Lead>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.LEADS)
+    .insert(lead)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Lead }
+}
+
+export async function updateLeadDetails(
+  id: string,
+  updates: Partial<Omit<LeadInsert, 'stage'>> & { stage?: string; notes?: string | null }
+): Promise<ServiceResult<Lead>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.LEADS)
+    .update({ ...updates, last_activity: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Lead }
+}
+
 export async function bulkInsertLeads(
   leads: LeadInsert[]
 ): Promise<ServiceResult<{ inserted: number; duplicates: string[] }>> {

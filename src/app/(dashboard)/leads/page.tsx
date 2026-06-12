@@ -43,6 +43,8 @@ function LeadsPageInner() {
   const searchParams = useSearchParams()
   useEffect(() => {
     if (searchParams.get('view') === 'mine') setViewMode('mine')
+    const q = searchParams.get('search')
+    if (q !== null) setSearch(q)
   }, [searchParams])
 
   const countries = useMemo(
@@ -124,7 +126,7 @@ function LeadsPageInner() {
               type="button"
               onClick={() => setViewMode('all')}
               className={`px-3 py-1.5 font-medium transition-colors ${
-                viewMode === 'all' ? 'bg-[#1E3A5F] text-white' : 'text-slate-500 hover:bg-slate-50'
+                viewMode === 'all' ? 'bg-[#0F172A] text-white' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
               All
@@ -133,7 +135,7 @@ function LeadsPageInner() {
               type="button"
               onClick={() => setViewMode('mine')}
               className={`px-3 py-1.5 font-medium transition-colors ${
-                viewMode === 'mine' ? 'bg-[#1E3A5F] text-white' : 'text-slate-500 hover:bg-slate-50'
+                viewMode === 'mine' ? 'bg-[#0F172A] text-white' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
               Mine
@@ -141,7 +143,7 @@ function LeadsPageInner() {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#2E86AB] text-white hover:bg-[#1d6b8a] transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors"
           >
             + Add Lead
           </button>
@@ -155,12 +157,12 @@ function LeadsPageInner() {
           placeholder="Search name or country…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+          className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
         />
         <select
           value={stageFilter}
           onChange={(e) => setStageFilter(e.target.value as PipelineStage | 'All')}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
         >
           <option value="All">All Stages</option>
           {PIPELINE_STAGES.map((s) => (
@@ -170,7 +172,7 @@ function LeadsPageInner() {
         <select
           value={countryFilter}
           onChange={(e) => setCountryFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
         >
           <option value="">All Countries</option>
           {countries.map((c) => (
@@ -180,7 +182,7 @@ function LeadsPageInner() {
         <select
           value={assignedFilter}
           onChange={(e) => setAssignedFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
         >
           <option value="">All Reps</option>
           {users.map((u) => (
@@ -279,7 +281,7 @@ function LeadsPageInner() {
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setEditRow(row)}
-                          className="text-slate-400 hover:text-[#2E86AB] transition-colors"
+                          className="text-slate-400 hover:text-[#2563EB] transition-colors"
                           title="Edit lead"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

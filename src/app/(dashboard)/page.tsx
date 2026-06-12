@@ -72,7 +72,7 @@ export default function MapPage() {
           style={{ top: 0, bottom: 0, borderRadius: '1rem 0 0 1rem' }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="text-sm font-semibold text-[#1E3A5F]">
+            <span className="text-sm font-semibold text-[#0F172A]">
               {boxSelectedLeads.length} lead{boxSelectedLeads.length !== 1 ? 's' : ''} in selected area
             </span>
             <button
@@ -92,7 +92,7 @@ export default function MapPage() {
                 <button
                   key={lead.id}
                   type="button"
-                  className="w-full text-left px-4 py-3 hover:bg-[#F0F8FF] transition-colors border-b border-gray-50 last:border-0"
+                  className="w-full text-left px-4 py-3 hover:bg-[#EFF6FF] transition-colors border-b border-gray-50 last:border-0"
                   onClick={() => setSelectedId(lead.id)}
                 >
                   <p className="text-sm font-medium text-gray-900 truncate">{lead.name}</p>

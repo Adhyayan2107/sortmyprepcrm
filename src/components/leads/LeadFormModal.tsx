@@ -120,7 +120,7 @@ export default function LeadFormModal({ mode, initial, onSave, onClose }: LeadFo
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#2E86AB] text-white hover:bg-[#1d6b8a] transition-colors disabled:opacity-60"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

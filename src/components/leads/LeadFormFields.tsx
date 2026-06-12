@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PIPELINE_STAGES, LEAD_SOURCES, CURRICULA } from '@/lib/constants'
 
 const INPUT_CLS =
-  'border border-slate-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[#2E86AB]'
+  'border border-slate-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[#2563EB]'
 const LABEL_CLS = 'block text-xs font-semibold text-slate-500 uppercase mb-1'
 
 export interface LeadFormValues {
@@ -133,7 +133,7 @@ export default function LeadFormFields({ values, onChange }: LeadFormFieldsProps
             type="button"
             onClick={geocodeAddress}
             disabled={geocoding || !addressInput.trim()}
-            className="px-3 py-2 rounded-lg bg-[#2E86AB] text-white text-xs font-semibold disabled:opacity-50 shrink-0 hover:bg-[#1d6b8a] transition-colors"
+            className="px-3 py-2 rounded-lg bg-[#2563EB] text-white text-xs font-semibold disabled:opacity-50 shrink-0 hover:bg-[#1D4ED8] transition-colors"
           >
             {geocoding ? '…' : 'Locate'}
           </button>

@@ -129,7 +129,7 @@ export default function LeadDetailPanel({
           {lead && (
             <button
               onClick={() => setShowEditModal(true)}
-              className="text-slate-400 hover:text-[#2E86AB] transition-colors"
+              className="text-slate-400 hover:text-[#2563EB] transition-colors"
               title="Edit lead"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,7 +283,7 @@ export default function LeadDetailPanel({
                 value={assignedScriptId}
                 onChange={(e) => handleAssignScript(e.target.value)}
                 disabled={assigningSaving}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB] disabled:opacity-60"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] disabled:opacity-60"
               >
                 <option value="">— No script assigned —</option>
                 {CONTACT_TYPES.map((type) => {
@@ -300,17 +300,17 @@ export default function LeadDetailPanel({
               </select>
             </div>
             {lead && assignedScriptId && (
-              <div className="bg-[#F0F8FF] rounded-xl p-4 space-y-2">
-                <p className="text-xs font-semibold text-[#1E3A5F] uppercase">Points Earned</p>
+              <div className="bg-[#EFF6FF] rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold text-[#0F172A] uppercase">Points Earned</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-[#2E86AB]">
+                  <span className="text-3xl font-bold text-[#2563EB]">
                     {STAGE_POINTS[lead.stage] ?? 0}
                   </span>
                   <span className="text-sm text-gray-400 mb-1">/ 7 pts · {lead.stage}</span>
                 </div>
-                <div className="h-2 bg-white rounded-full overflow-hidden border border-[#2E86AB]/20">
+                <div className="h-2 bg-white rounded-full overflow-hidden border border-[#2563EB]/20">
                   <div
-                    className="h-full bg-[#2E86AB] rounded-full transition-all"
+                    className="h-full bg-[#2563EB] rounded-full transition-all"
                     style={{ width: `${((STAGE_POINTS[lead.stage] ?? 0) / 7) * 100}%` }}
                   />
                 </div>

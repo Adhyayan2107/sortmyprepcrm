@@ -59,7 +59,7 @@ function ScriptRankings() {
             <p className="text-xs text-gray-400 mt-0.5">{s.contact_type} · {s.lead_count} lead{s.lead_count !== 1 ? 's' : ''}</p>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-xl font-bold text-[#2E86AB]">{s.avg_points.toFixed(1)}</div>
+            <div className="text-xl font-bold text-[#2563EB]">{s.avg_points.toFixed(1)}</div>
             <div className="text-xs text-gray-400">avg pts</div>
           </div>
           <div className="text-right shrink-0 hidden sm:block">
@@ -69,7 +69,7 @@ function ScriptRankings() {
           <div className="w-20 shrink-0 hidden md:block">
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#2E86AB] rounded-full"
+                className="h-full bg-[#2563EB] rounded-full"
                 style={{ width: `${(s.avg_points / STAGE_MAX) * 100}%` }}
               />
             </div>
@@ -155,7 +155,7 @@ function NewScriptModal({
                 placeholder="e.g. Initial outreach — IB school"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
             <div>
@@ -165,7 +165,7 @@ function NewScriptModal({
                   type="button"
                   disabled={importing}
                   onClick={() => fileRef.current?.click()}
-                  className="text-xs text-[#2E86AB] hover:underline disabled:opacity-50"
+                  className="text-xs text-[#2563EB] hover:underline disabled:opacity-50"
                 >
                   {importing ? 'Extracting…' : 'Import from file (.txt, .md, .pdf, .docx)'}
                 </button>
@@ -176,7 +176,7 @@ function NewScriptModal({
                 placeholder="Script content (markdown supported)…"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2E86AB] resize-none"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2563EB] resize-none"
               />
             </div>
           </div>
@@ -187,7 +187,7 @@ function NewScriptModal({
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#2E86AB] text-white hover:bg-[#1d6b8a] disabled:opacity-60"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:opacity-60"
             >
               {saving ? 'Saving…' : 'Save Script'}
             </button>
@@ -223,7 +223,7 @@ function ScriptsPageInner() {
         {!isRankings && (
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 rounded-lg bg-[#2E86AB] text-white text-sm font-semibold hover:bg-[#1d6b8a] transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#2563EB] text-white text-sm font-semibold hover:bg-[#1D4ED8] transition-colors"
           >
             + New Script
           </button>
@@ -242,7 +242,7 @@ function ScriptsPageInner() {
                 onClick={() => setActiveTab(type)}
                 className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                   activeTab === type
-                    ? 'border-[#2E86AB] text-[#2E86AB]'
+                    ? 'border-[#2563EB] text-[#2563EB]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >

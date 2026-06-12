@@ -2,15 +2,32 @@
 
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --color-background: #F1F5F9;
-  --color-foreground: #0F172A;
-  --color-brand-primary: #1E3A5F;
-  --color-brand-accent: #2E86AB;
-  --color-brand-light: #EAF4FB;
-  --color-sidebar: #0D1117;
+
+  /* Surfaces */
+  --color-background: #F8FAFC;          /* page canvas — slate-50 */
   --color-card: #FFFFFF;
-  --color-border: #E2E8F0;
-  --color-muted: #64748B;
+  --color-sidebar: #FFFFFF;             /* LIGHT sidebar (was dark) */
+  --color-elevated: #FFFFFF;
+
+  /* Text */
+  --color-foreground: #0F172A;          /* slate-900 */
+  --color-muted: #64748B;               /* slate-500 */
+  --color-subtle: #94A3B8;              /* slate-400 */
+
+  /* Borders */
+  --color-border: #E2E8F0;              /* slate-200 */
+  --color-border-subtle: #F1F5F9;       /* slate-100 */
+
+  /* Brand */
+  --color-brand-primary: #0F172A;       /* slate-900 — headings, dark UI */
+  --color-brand-accent: #2563EB;        /* blue-600 — primary actions */
+  --color-brand-accent-hover: #1D4ED8;  /* blue-700 */
+  --color-brand-light: #EFF6FF;         /* blue-50 — soft tints */
+
+  /* Semantic */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
 }
 
 body {
@@ -18,11 +35,26 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * { box-sizing: border-box; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+
+/* Focus rings — subtle, consistent */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+}

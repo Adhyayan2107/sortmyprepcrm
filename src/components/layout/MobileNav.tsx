@@ -45,15 +45,15 @@ export default function MobileNav() {
   ]
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0D1117] flex border-t border-white/5 z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white flex border-t border-slate-200 z-50 pb-safe">
       {items.map((item) => {
         const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 py-3 text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
-              active ? 'text-[#2E86AB]' : 'text-slate-500'
+            className={`flex-1 py-2.5 text-[11px] font-medium flex flex-col items-center gap-1 transition-colors ${
+              active ? 'text-[#2563EB]' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             {NAV_ICONS[item.href]}

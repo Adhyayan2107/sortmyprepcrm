@@ -56,7 +56,7 @@ export default function ScriptDocUpload({
 
       {documentUrl && documentName ? (
         <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
-          <svg className="w-8 h-8 text-[#2E86AB] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 text-[#2563EB] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
           <div className="flex-1 min-w-0">
@@ -65,7 +65,7 @@ export default function ScriptDocUpload({
               href={documentUrl}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-[#2E86AB] hover:underline"
+              className="text-xs text-[#2563EB] hover:underline"
             >
               Open / Download
             </a>
@@ -91,7 +91,7 @@ export default function ScriptDocUpload({
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-slate-200 text-slate-500 text-sm hover:border-[#2E86AB] hover:text-[#2E86AB] transition-colors w-full justify-center disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-slate-200 text-slate-500 text-sm hover:border-[#2563EB] hover:text-[#2563EB] transition-colors w-full justify-center disabled:opacity-50"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />

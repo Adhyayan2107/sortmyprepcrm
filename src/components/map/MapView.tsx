@@ -205,8 +205,8 @@ export default function MapView({ pins, onPinClick, updatedPin, onBoxSelect }: M
             top: boxRect.top,
             width: boxRect.width,
             height: boxRect.height,
-            border: '2px solid #2E86AB',
-            background: 'rgba(46,134,171,0.1)',
+            border: '2px solid #2563EB',
+            background: 'rgba(37,99,235,0.08)',
             pointerEvents: 'none',
             zIndex: 5,
           }}
@@ -225,8 +225,8 @@ export default function MapView({ pins, onPinClick, updatedPin, onBoxSelect }: M
         style={{
           top: '90px',
           right: '10px',
-          color: selectMode ? '#2E86AB' : '#6b7280',
-          borderColor: selectMode ? '#2E86AB' : '#e5e7eb',
+          color: selectMode ? '#2563EB' : '#6b7280',
+          borderColor: selectMode ? '#2563EB' : '#e5e7eb',
         }}
       >
         {/* Dashed square icon */}

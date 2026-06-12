@@ -13,21 +13,21 @@ Given the following website content from a coaching center, extract and return a
 6. Overall tone and positioning (premium, affordable, academic, etc.)
 7. Any red flags or notes relevant to a sales call
 
-Be concise. Return as plain text with clear headings. Max 300 words.`
+Be concise and specific — use only what's actually on the website, don't guess. Return as plain text with clear headings. Max 400 words.`
 
 export async function fetchWebsiteText(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SortMyCRM/1.0)' },
-    signal: AbortSignal.timeout(10000),
+  // Jina Reader renders JS-heavy pages and returns clean text
+  const jinaUrl = `https://r.jina.ai/${url}`
+  const res = await fetch(jinaUrl, {
+    headers: {
+      'Accept': 'text/plain',
+      'X-Timeout': '20',
+    },
+    signal: AbortSignal.timeout(25000),
   })
-  const html = await res.text()
-  const clean = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return clean.slice(0, 4000)
+  if (!res.ok) throw new Error(`Jina fetch failed: ${res.status}`)
+  const text = await res.text()
+  return text.slice(0, 6000)
 }
 
 export async function generateIntelBrief(

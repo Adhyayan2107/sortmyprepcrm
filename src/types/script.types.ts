@@ -17,6 +17,16 @@ export interface Script {
   rating_count?: number
 }
 
+export interface ScriptWithScore {
+  id: string
+  title: string
+  contact_type: ContactType
+  usage_count: number
+  total_points: number
+  lead_count: number
+  avg_points: number
+}
+
 export interface ScriptRating {
   id: string
   script_id: string

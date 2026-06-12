@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase'
-import { Script, ScriptInsert, ScriptRating, ScriptUpdate } from '@/types/script.types'
+import { Script, ScriptInsert, ScriptRating, ScriptUpdate, ScriptWithScore } from '@/types/script.types'
 import { ContactType } from '@/types/script.types'
 import { ServiceResult } from '@/types/api.types'
-import { TABLES } from '@/lib/constants'
+import { TABLES, PIPELINE_STAGES } from '@/lib/constants'
+
+const STAGE_POINTS: Record<string, number> = Object.fromEntries(
+  PIPELINE_STAGES.map((s, i) => [s, s === 'Blocked/Dead' ? 0 : i + 1])
+)
 
 export async function getScriptsByContactType(
   contactType: ContactType
@@ -188,4 +192,85 @@ export async function getUserRating(
 
   if (error) return { success: false, error: error.message }
   return { success: true, data: data as ScriptRating | null }
+}
+
+export async function assignScriptToLead(
+  scriptId: string,
+  leadId: string,
+  assignedBy: string
+): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('script_lead_usage')
+    .upsert(
+      { script_id: scriptId, lead_id: leadId, assigned_by: assignedBy, assigned_at: new Date().toISOString() },
+      { onConflict: 'lead_id' }
+    )
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
+export async function removeScriptFromLead(leadId: string): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('script_lead_usage')
+    .delete()
+    .eq('lead_id', leadId)
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
+export async function getLeadAssignedScript(
+  leadId: string
+): Promise<ServiceResult<{ script_id: string; script: Script } | null>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('script_lead_usage')
+    .select('script_id, script:scripts(id, title, contact_type, usage_count, content, archived, document_url, document_name, created_by, created_at)')
+    .eq('lead_id', leadId)
+    .maybeSingle()
+  if (error) return { success: false, error: error.message }
+  if (!data) return { success: true, data: null }
+  return { success: true, data: { script_id: data.script_id, script: data.script as unknown as Script } }
+}
+
+export async function getScriptLeaderboard(): Promise<ServiceResult<ScriptWithScore[]>> {
+  const supabase = createClient()
+  const [{ data: usages, error: usageErr }, { data: scripts, error: scriptErr }] = await Promise.all([
+    supabase
+      .from('script_lead_usage')
+      .select('script_id, lead:leads!inner(stage)'),
+    supabase
+      .from(TABLES.SCRIPTS)
+      .select('id, title, contact_type, usage_count')
+      .eq('archived', false),
+  ])
+  if (usageErr) return { success: false, error: usageErr.message }
+  if (scriptErr) return { success: false, error: scriptErr.message }
+
+  const scoreMap = new Map<string, { total: number; count: number }>()
+  for (const u of usages ?? []) {
+    const stage = (u.lead as unknown as { stage: string })?.stage ?? 'New Lead'
+    const pts = STAGE_POINTS[stage] ?? 0
+    const entry = scoreMap.get(u.script_id) ?? { total: 0, count: 0 }
+    entry.total += pts
+    entry.count += 1
+    scoreMap.set(u.script_id, entry)
+  }
+
+  const enriched: ScriptWithScore[] = (scripts ?? []).map((s) => {
+    const score = scoreMap.get(s.id)
+    return {
+      id: s.id,
+      title: s.title,
+      contact_type: s.contact_type as ContactType,
+      usage_count: s.usage_count,
+      total_points: score?.total ?? 0,
+      lead_count: score?.count ?? 0,
+      avg_points: score ? Math.round((score.total / score.count) * 10) / 10 : 0,
+    }
+  })
+
+  enriched.sort((a, b) => b.avg_points - a.avg_points || b.total_points - a.total_points)
+  return { success: true, data: enriched }
 }

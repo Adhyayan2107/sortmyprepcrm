@@ -109,35 +109,34 @@ function LeadsPageInner() {
 
   return (
     <div className="px-4 py-6 max-w-7xl mx-auto">
-      {/* Header + Filters */}
-      <div className="flex flex-col gap-3 mb-5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-2xl font-bold text-[var(--color-brand-primary)] flex-1">
-            Leads <span className="text-base font-normal text-gray-400">({filtered.length})</span>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-brand-primary)]">
+            {viewMode === 'mine' ? 'My Leads' : 'All Leads'}
+            <span className="ml-2 text-base font-normal text-gray-400">({filtered.length})</span>
           </h1>
-          {/* All / My Leads tabs */}
-          <div className="flex items-center gap-1">
+        </div>
+        <div className="flex items-center gap-2">
+          {/* All / Mine toggle */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
             <button
               type="button"
               onClick={() => setViewMode('all')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'all'
-                  ? 'bg-[#1E3A5F] text-white'
-                  : 'text-slate-500 hover:text-slate-700 bg-slate-100'
+              className={`px-3 py-1.5 font-medium transition-colors ${
+                viewMode === 'all' ? 'bg-[#1E3A5F] text-white' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
-              All Leads
+              All
             </button>
             <button
               type="button"
               onClick={() => setViewMode('mine')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'mine'
-                  ? 'bg-[#1E3A5F] text-white'
-                  : 'text-slate-500 hover:text-slate-700 bg-slate-100'
+              className={`px-3 py-1.5 font-medium transition-colors ${
+                viewMode === 'mine' ? 'bg-[#1E3A5F] text-white' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
-              My Leads
+              Mine
             </button>
           </div>
           <button
@@ -147,45 +146,47 @@ function LeadsPageInner() {
             + Add Lead
           </button>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <input
-            type="text"
-            placeholder="Search name or country…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-40 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
-          />
-          <select
-            value={stageFilter}
-            onChange={(e) => setStageFilter(e.target.value as PipelineStage | 'All')}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
-          >
-            <option value="All">All Stages</option>
-            {PIPELINE_STAGES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            value={countryFilter}
-            onChange={(e) => setCountryFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
-          >
-            <option value="">All Countries</option>
-            {countries.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select
-            value={assignedFilter}
-            onChange={(e) => setAssignedFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
-          >
-            <option value="">All Reps</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>{u.name ?? u.id.slice(0, 8)}</option>
-            ))}
-          </select>
-        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Search name or country…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="col-span-2 sm:col-span-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+        />
+        <select
+          value={stageFilter}
+          onChange={(e) => setStageFilter(e.target.value as PipelineStage | 'All')}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+        >
+          <option value="All">All Stages</option>
+          {PIPELINE_STAGES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <select
+          value={countryFilter}
+          onChange={(e) => setCountryFilter(e.target.value)}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+        >
+          <option value="">All Countries</option>
+          {countries.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          value={assignedFilter}
+          onChange={(e) => setAssignedFilter(e.target.value)}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB]"
+        >
+          <option value="">All Reps</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>{u.name ?? u.id.slice(0, 8)}</option>
+          ))}
+        </select>
       </div>
 
       {/* Bulk assign bar */}

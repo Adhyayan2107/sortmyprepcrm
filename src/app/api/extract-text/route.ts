@@ -12,10 +12,26 @@ export async function POST(req: NextRequest) {
 
   try {
     if (name.endsWith('.pdf')) {
-      const { PDFParse } = await import('pdf-parse')
-      const parser = new PDFParse({ data: buffer })
-      const result = await parser.getText()
-      return Response.json({ text: result.text })
+      // Use pdfjs-dist directly — pdf-parse wrapper needs worker config that fails in serverless
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+      pdfjs.GlobalWorkerOptions.workerSrc = ''
+      const loadingTask = pdfjs.getDocument({
+        data: new Uint8Array(buffer),
+        disableStream: true,
+        disableAutoFetch: true,
+      })
+      const doc = await loadingTask.promise
+      let text = ''
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i)
+        const content = await page.getTextContent()
+        for (const item of content.items) {
+          if ('str' in item) text += item.str + ' '
+        }
+        text += '\n'
+      }
+      await doc.destroy()
+      return Response.json({ text: text.trim() })
     }
 
     if (name.endsWith('.docx') || name.endsWith('.doc')) {
@@ -25,7 +41,8 @@ export async function POST(req: NextRequest) {
     }
 
     return Response.json({ error: 'Unsupported file type' }, { status: 400 })
-  } catch {
-    return Response.json({ error: 'Failed to extract text from file' }, { status: 500 })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    return Response.json({ error: `Failed to extract text: ${msg}` }, { status: 500 })
   }
 }

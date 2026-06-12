@@ -5,10 +5,12 @@ import { Lead } from '@/types/lead.types'
 import { PipelineStage } from '@/types/pipeline.types'
 import { ActivityLog } from '@/types/activity.types'
 import { AppUser } from '@/types/user.types'
-import { PIPELINE_STAGES } from '@/lib/constants'
 import { getLeadById, updateLeadStage, updateLeadAssignment } from '@/services/leadService'
 import { getActivityForLead, addNote, logStageChange } from '@/services/activityService'
 import { getAllUsers } from '@/services/userService'
+import { getScriptsByContactType, assignScriptToLead, removeScriptFromLead, getLeadAssignedScript } from '@/services/scriptService'
+import { Script } from '@/types/script.types'
+import { CONTACT_TYPES, PIPELINE_STAGES } from '@/lib/constants'
 import { useUser } from '@/hooks/useUser'
 import StageBadge from '@/components/ui/StageBadge'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -16,6 +18,10 @@ import ActivityTimeline from '@/components/leads/ActivityTimeline'
 import IntelBrief from '@/components/leads/IntelBrief'
 import LeadFormModal from '@/components/leads/LeadFormModal'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
+
+const STAGE_POINTS: Record<string, number> = Object.fromEntries(
+  PIPELINE_STAGES.map((s, i) => [s, s === 'Blocked/Dead' ? 0 : i + 1])
+)
 
 interface LeadDetailPanelProps {
   leadId: string
@@ -38,8 +44,11 @@ export default function LeadDetailPanel({
   const [saving, setSaving] = useState(false)
   const [noteText, setNoteText] = useState('')
   const [addingNote, setAddingNote] = useState(false)
-  const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'intel'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'intel' | 'script'>('info')
   const [showEditModal, setShowEditModal] = useState(false)
+  const [allScripts, setAllScripts] = useState<Script[]>([])
+  const [assignedScriptId, setAssignedScriptId] = useState<string>('')
+  const [assigningSaving, setAssigningSaving] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -47,10 +56,16 @@ export default function LeadDetailPanel({
       getLeadById(leadId),
       getActivityForLead(leadId),
       getAllUsers(),
-    ]).then(([leadRes, actRes, usersRes]) => {
+      getLeadAssignedScript(leadId),
+      // Fetch all scripts for the assignment dropdown
+      Promise.all(CONTACT_TYPES.map((t) => getScriptsByContactType(t))),
+    ]).then(([leadRes, actRes, usersRes, assignedRes, scriptGroups]) => {
       if (leadRes.success) setLead(leadRes.data)
       if (actRes.success) setActivity(actRes.data)
       if (usersRes.success) setTeamUsers(usersRes.data)
+      if (assignedRes.success && assignedRes.data) setAssignedScriptId(assignedRes.data.script_id)
+      const allS = scriptGroups.flatMap((r) => (r.success ? r.data : []))
+      setAllScripts(allS)
       setLoading(false)
     })
   }, [leadId])
@@ -77,6 +92,19 @@ export default function LeadDetailPanel({
     const res = await updateLeadAssignment(lead.id, val)
     if (res.success) setLead(res.data)
     setSaving(false)
+  }
+
+  async function handleAssignScript(scriptId: string) {
+    if (!lead || !currentUser) return
+    setAssigningSaving(true)
+    if (scriptId === '') {
+      await removeScriptFromLead(lead.id)
+      setAssignedScriptId('')
+    } else {
+      const res = await assignScriptToLead(scriptId, lead.id, currentUser.id)
+      if (res.success) setAssignedScriptId(scriptId)
+    }
+    setAssigningSaving(false)
   }
 
   async function handleAddNote() {
@@ -120,17 +148,22 @@ export default function LeadDetailPanel({
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
-        {(['info', 'activity', 'intel'] as const).map((tab) => (
+        {([
+          { key: 'info', label: 'Info' },
+          { key: 'script', label: 'Script' },
+          { key: 'activity', label: 'Activity' },
+          { key: 'intel', label: 'Intel' },
+        ] as const).map(({ key, label }) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 text-sm font-medium capitalize transition-colors ${
-              activeTab === tab
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === key
                 ? 'border-b-2 border-[var(--color-brand-accent)] text-[var(--color-brand-accent)]'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tab}
+            {label}
           </button>
         ))}
       </div>
@@ -237,6 +270,54 @@ export default function LeadDetailPanel({
               >
                 View Call Scripts
               </button>
+            )}
+          </div>
+        ) : activeTab === 'script' ? (
+          <div className="px-5 py-4 space-y-5">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Assigned Script</p>
+              <p className="text-xs text-gray-400 mb-3">
+                Select the script being used for this lead. Points are tracked as the lead advances through stages.
+              </p>
+              <select
+                value={assignedScriptId}
+                onChange={(e) => handleAssignScript(e.target.value)}
+                disabled={assigningSaving}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB] disabled:opacity-60"
+              >
+                <option value="">— No script assigned —</option>
+                {CONTACT_TYPES.map((type) => {
+                  const group = allScripts.filter((s) => s.contact_type === type)
+                  if (group.length === 0) return null
+                  return (
+                    <optgroup key={type} label={type}>
+                      {group.map((s) => (
+                        <option key={s.id} value={s.id}>{s.title}</option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
+              </select>
+            </div>
+            {lead && assignedScriptId && (
+              <div className="bg-[#F0F8FF] rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold text-[#1E3A5F] uppercase">Points Earned</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-[#2E86AB]">
+                    {STAGE_POINTS[lead.stage] ?? 0}
+                  </span>
+                  <span className="text-sm text-gray-400 mb-1">/ 7 pts · {lead.stage}</span>
+                </div>
+                <div className="h-2 bg-white rounded-full overflow-hidden border border-[#2E86AB]/20">
+                  <div
+                    className="h-full bg-[#2E86AB] rounded-full transition-all"
+                    style={{ width: `${((STAGE_POINTS[lead.stage] ?? 0) / 7) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  Reaches 7 pts when stage is Confirmed
+                </p>
+              </div>
             )}
           </div>
         ) : activeTab === 'intel' ? (

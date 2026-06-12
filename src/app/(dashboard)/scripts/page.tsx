@@ -215,11 +215,18 @@ function ScriptsPageInner() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* Header */}
+      {/* Header — title reflects the active sidebar section */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--color-brand-primary)]">
-          {isRankings ? 'Script Rankings' : 'Call Scripts'}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-brand-primary)]">
+            {isRankings ? 'Script Rankings' : `${activeTab}s`}
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            {isRankings
+              ? 'Leaderboard of scripts ranked by lead-stage progress.'
+              : 'Call scripts for this contact type.'}
+          </p>
+        </div>
         {!isRankings && (
           <button
             onClick={() => setShowModal(true)}
@@ -234,8 +241,8 @@ function ScriptsPageInner() {
         <ScriptRankings />
       ) : (
         <>
-          {/* Contact type tabs */}
-          <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+          {/* Contact type tabs — mobile only (sidebar handles this on desktop) */}
+          <div className="md:hidden flex border-b border-gray-200 mb-6 overflow-x-auto">
             {CONTACT_TYPES.map((type) => (
               <button
                 key={type}

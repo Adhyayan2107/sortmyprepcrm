@@ -120,8 +120,8 @@ function LeadsPageInner() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          {/* All / Mine toggle */}
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+          {/* All / Mine toggle — mobile only (sidebar handles this on desktop) */}
+          <div className="md:hidden flex rounded-lg border border-gray-200 overflow-hidden text-sm">
             <button
               type="button"
               onClick={() => setViewMode('all')}

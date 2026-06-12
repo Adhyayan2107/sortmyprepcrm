@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { PIPELINE_STAGES, LEAD_SOURCES, CURRICULA } from '@/lib/constants'
 
 const INPUT_CLS =
@@ -27,6 +28,10 @@ interface LeadFormFieldsProps {
 }
 
 export default function LeadFormFields({ values, onChange }: LeadFormFieldsProps) {
+  const [addressInput, setAddressInput] = useState('')
+  const [geocoding, setGeocoding] = useState(false)
+  const [geocodeError, setGeocodeError] = useState('')
+
   function set(key: keyof LeadFormValues, value: string) {
     onChange({ ...values, [key]: value })
   }
@@ -36,6 +41,27 @@ export default function LeadFormFields({ values, onChange }: LeadFormFieldsProps
       ? values.curriculum.filter((c) => c !== item)
       : [...values.curriculum, item]
     onChange({ ...values, curriculum: next })
+  }
+
+  async function geocodeAddress() {
+    if (!addressInput.trim()) return
+    setGeocoding(true)
+    setGeocodeError('')
+    try {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(addressInput)}.json?access_token=${token}&limit=1`
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.features?.length > 0) {
+        const [lng, lat] = data.features[0].center as [number, number]
+        onChange({ ...values, lat: String(lat), lng: String(lng) })
+      } else {
+        setGeocodeError('Address not found')
+      }
+    } catch {
+      setGeocodeError('Geocoding failed')
+    }
+    setGeocoding(false)
   }
 
   return (
@@ -92,6 +118,27 @@ export default function LeadFormFields({ values, onChange }: LeadFormFieldsProps
             </label>
           ))}
         </div>
+      </div>
+      <div>
+        <label className={LABEL_CLS}>Address (auto-fill location)</label>
+        <div className="flex gap-2">
+          <input
+            className={INPUT_CLS}
+            placeholder="e.g. 123 Main St, Dubai, UAE"
+            value={addressInput}
+            onChange={(e) => setAddressInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); geocodeAddress() } }}
+          />
+          <button
+            type="button"
+            onClick={geocodeAddress}
+            disabled={geocoding || !addressInput.trim()}
+            className="px-3 py-2 rounded-lg bg-[#2E86AB] text-white text-xs font-semibold disabled:opacity-50 shrink-0 hover:bg-[#1d6b8a] transition-colors"
+          >
+            {geocoding ? '…' : 'Locate'}
+          </button>
+        </div>
+        {geocodeError && <p className="text-xs text-red-500 mt-1">{geocodeError}</p>}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

@@ -213,7 +213,7 @@ export default function MapView({ pins, onPinClick, updatedPin, onBoxSelect }: M
         />
       )}
 
-      {/* Draw Area toggle button */}
+      {/* Draw Area toggle button — sits below the Mapbox NavigationControl */}
       <button
         type="button"
         onClick={() => {
@@ -221,8 +221,10 @@ export default function MapView({ pins, onPinClick, updatedPin, onBoxSelect }: M
           setDragStart(null)
           setBoxRect(null)
         }}
-        className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white shadow-md border text-xs font-medium cursor-pointer select-none"
+        className="absolute z-10 flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white shadow-md border text-xs font-medium cursor-pointer select-none"
         style={{
+          top: '90px',
+          right: '10px',
           color: selectMode ? '#2E86AB' : '#6b7280',
           borderColor: selectMode ? '#2E86AB' : '#e5e7eb',
         }}

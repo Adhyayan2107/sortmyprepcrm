@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CONTACT_TYPES } from '@/lib/constants'
 import { ContactType } from '@/types/script.types'
 import { useScripts } from '@/hooks/useScripts'
@@ -12,26 +13,48 @@ import EmptyState from '@/components/ui/EmptyState'
 
 export default function ScriptsPage() {
   const { user } = useUser()
-  const [activeTab, setActiveTab] = useState<ContactType>(CONTACT_TYPES[0])
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState<ContactType>(() => {
+    const t = searchParams.get('type')
+    return CONTACT_TYPES.includes(t as ContactType) ? (t as ContactType) : CONTACT_TYPES[0]
+  })
   const { scripts, loading, refetch } = useScripts(activeTab)
+
+  useEffect(() => {
+    const t = searchParams.get('type')
+    if (t && CONTACT_TYPES.includes(t as ContactType)) setActiveTab(t as ContactType)
+  }, [searchParams])
   const [showCreate, setShowCreate] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setNewContent(reader.result)
-      }
-    }
-    reader.readAsText(file)
-    // Reset so same file can be re-selected if needed
     e.target.value = ''
+    const name = file.name.toLowerCase()
+    if (name.endsWith('.pdf') || name.endsWith('.doc') || name.endsWith('.docx')) {
+      setImporting(true)
+      const form = new FormData()
+      form.append('file', file)
+      try {
+        const res = await fetch('/api/extract-text', { method: 'POST', body: form })
+        if (res.ok) {
+          const { text } = await res.json()
+          setNewContent(text ?? '')
+        }
+      } catch { /* silently fail */ }
+      setImporting(false)
+    } else {
+      const reader = new FileReader()
+      reader.onload = () => {
+        if (typeof reader.result === 'string') setNewContent(reader.result)
+      }
+      reader.readAsText(file)
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -78,15 +101,16 @@ export default function ScriptsPage() {
             <span className="text-xs text-gray-500 font-medium">Content</span>
             <button
               type="button"
-              className="text-xs text-[#2E86AB] hover:underline cursor-pointer"
+              disabled={importing}
+              className="text-xs text-[#2E86AB] hover:underline cursor-pointer disabled:opacity-50"
               onClick={() => fileInputRef.current?.click()}
             >
-              Import from file
+              {importing ? 'Extracting…' : 'Import from file'}
             </button>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".txt,.md"
+              accept=".txt,.md,.pdf,.doc,.docx"
               className="hidden"
               onChange={handleImportFile}
             />

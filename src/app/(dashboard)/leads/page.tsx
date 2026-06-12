@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useLeadRows } from '@/hooks/useLeads'
 import { PIPELINE_STAGES } from '@/lib/constants'
 import { PipelineStage } from '@/types/pipeline.types'
@@ -37,6 +38,11 @@ export default function LeadsPage() {
   useEffect(() => {
     getAllUsers().then((res) => { if (res.success) setUsers(res.data) })
   }, [])
+
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('view') === 'mine') setViewMode('mine')
+  }, [searchParams])
 
   const countries = useMemo(
     () => [...new Set(rows.map((r) => r.country))].sort(),

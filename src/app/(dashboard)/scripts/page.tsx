@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CONTACT_TYPES } from '@/lib/constants'
@@ -11,7 +12,7 @@ import ScriptCard from '@/components/scripts/ScriptCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import EmptyState from '@/components/ui/EmptyState'
 
-export default function ScriptsPage() {
+function ScriptsPageInner() {
   const { user } = useUser()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<ContactType>(() => {
@@ -164,5 +165,13 @@ export default function ScriptsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ScriptsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ScriptsPageInner />
+    </Suspense>
   )
 }

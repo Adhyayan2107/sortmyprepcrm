@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLeadRows } from '@/hooks/useLeads'
@@ -18,7 +19,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
 import { useUser } from '@/hooks/useUser'
 
-export default function LeadsPage() {
+function LeadsPageInner() {
   const { rows, loading, error, refetch } = useLeadRows()
   const { user: currentUser } = useUser()
   const [viewMode, setViewMode] = useState<'all' | 'mine'>('all')
@@ -326,5 +327,13 @@ export default function LeadsPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function LeadsPage() {
+  return (
+    <Suspense fallback={null}>
+      <LeadsPageInner />
+    </Suspense>
   )
 }

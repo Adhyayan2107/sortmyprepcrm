@@ -25,6 +25,7 @@ export default function MapPage() {
   const [filters, setFilters] = useState<MapFilters>({ country: '', stage: 'All', assignedTo: '' })
   const [showScripts, setShowScripts] = useState(false)
   const [boxSelectedIds, setBoxSelectedIds] = useState<string[]>([])
+  const [exportName, setExportName] = useState('selected-leads')
 
   useEffect(() => {
     getAllUsers().then((res) => { if (res.success) setUsers(res.data) })
@@ -43,6 +44,24 @@ export default function MapPage() {
   const boxSelectedLeads = useMemo(() => {
     return filteredPins.filter((p) => boxSelectedIds.includes(p.id))
   }, [filteredPins, boxSelectedIds])
+
+  function handleExportCSV() {
+    if (boxSelectedLeads.length === 0) return
+    const header = 'Name,Country,City,Stage,Latitude,Longitude'
+    const rows = boxSelectedLeads.map((l) =>
+      [l.name, l.country, l.city ?? '', l.stage, l.lat ?? '', l.lng ?? '']
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(',')
+    )
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${exportName.trim() || 'selected-leads'}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   function handleStageChange(id: string, stage: PipelineStage) {
     setUpdatedPin({ id, stage })
@@ -104,6 +123,32 @@ export default function MapPage() {
               ))
             )}
           </div>
+
+          {/* Export footer */}
+          {boxSelectedLeads.length > 0 && (
+            <div className="px-4 py-3 border-t border-gray-100 space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Export as CSV</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={exportName}
+                  onChange={(e) => setExportName(e.target.value)}
+                  placeholder="File name…"
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2563EB] min-w-0"
+                />
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

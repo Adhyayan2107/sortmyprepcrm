@@ -223,7 +223,7 @@ export default function MapView({ pins, onPinClick, updatedPin, onBoxSelect }: M
         }}
         className="absolute z-10 flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white shadow-md border text-xs font-medium cursor-pointer select-none"
         style={{
-          top: '90px',
+          top: '120px',
           right: '10px',
           color: selectMode ? '#2563EB' : '#6b7280',
           borderColor: selectMode ? '#2563EB' : '#e5e7eb',

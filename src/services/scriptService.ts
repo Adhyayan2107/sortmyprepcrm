@@ -2,11 +2,7 @@ import { createClient } from '@/lib/supabase'
 import { Script, ScriptInsert, ScriptRating, ScriptUpdate, ScriptWithScore } from '@/types/script.types'
 import { ContactType } from '@/types/script.types'
 import { ServiceResult } from '@/types/api.types'
-import { TABLES, PIPELINE_STAGES } from '@/lib/constants'
-
-const STAGE_POINTS: Record<string, number> = Object.fromEntries(
-  PIPELINE_STAGES.map((s, i) => [s, s === 'Blocked/Dead' ? 0 : i + 1])
-)
+import { TABLES, STAGE_POINTS } from '@/lib/constants'
 
 export async function getScriptsByContactType(
   contactType: ContactType

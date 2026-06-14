@@ -31,3 +31,7 @@ export const CONTACT_TYPES = [
 
 export const DEFAULT_MAP_CENTER: [number, number] = [45.0, 25.0]
 export const DEFAULT_MAP_ZOOM = 4
+
+export const STAGE_POINTS: Record<string, number> = Object.fromEntries(
+  PIPELINE_STAGES.map((s, i) => [s, s === 'Blocked/Dead' ? 0 : i + 1])
+)

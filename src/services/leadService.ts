@@ -129,6 +129,29 @@ export async function updateLeadDetails(
   return { success: true, data: data as Lead }
 }
 
+export async function incrementLeadCount(
+  id: string,
+  field: 'call_count' | 'message_count' | 'email_count',
+  delta: 1 | -1
+): Promise<ServiceResult<Lead>> {
+  const supabase = createClient()
+  const { data: current, error: fetchErr } = await supabase
+    .from(TABLES.LEADS)
+    .select(field)
+    .eq('id', id)
+    .single()
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  const next = Math.max(0, ((current as Record<string, number>)[field] ?? 0) + delta)
+  const { data, error } = await supabase
+    .from(TABLES.LEADS)
+    .update({ [field]: next })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Lead }
+}
+
 export async function bulkInsertLeads(
   leads: LeadInsert[]
 ): Promise<ServiceResult<{ inserted: number; duplicates: string[] }>> {

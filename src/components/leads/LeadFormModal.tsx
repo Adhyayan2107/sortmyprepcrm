@@ -27,6 +27,9 @@ function toValues(initial?: Partial<Lead>): LeadFormValues {
     lat: initial?.lat != null ? String(initial.lat) : '',
     lng: initial?.lng != null ? String(initial.lng) : '',
     notes: initial?.notes ?? '',
+    call_count: String(initial?.call_count ?? 0),
+    message_count: String(initial?.message_count ?? 0),
+    email_count: String(initial?.email_count ?? 0),
   }
 }
 
@@ -57,6 +60,9 @@ export default function LeadFormModal({ mode, initial, onSave, onClose }: LeadFo
         curriculum: values.curriculum.length > 0 ? values.curriculum : null,
         lat: values.lat !== '' ? Number(values.lat) : null,
         lng: values.lng !== '' ? Number(values.lng) : null,
+        call_count: Number(values.call_count) || 0,
+        message_count: Number(values.message_count) || 0,
+        email_count: Number(values.email_count) || 0,
       }
       const res = await createLead(payload)
       if (!res.success) { setErrorMsg(res.error); setSaving(false); return }
@@ -79,6 +85,9 @@ export default function LeadFormModal({ mode, initial, onSave, onClose }: LeadFo
       if (values.lat !== init.lat) updates.lat = values.lat !== '' ? Number(values.lat) : null
       if (values.lng !== init.lng) updates.lng = values.lng !== '' ? Number(values.lng) : null
       if (values.notes !== init.notes) updates.notes = values.notes.trim() || null
+      if (values.call_count !== init.call_count) updates.call_count = Number(values.call_count) || 0
+      if (values.message_count !== init.message_count) updates.message_count = Number(values.message_count) || 0
+      if (values.email_count !== init.email_count) updates.email_count = Number(values.email_count) || 0
       const res = await updateLeadDetails(initial.id, updates)
       if (!res.success) { setErrorMsg(res.error); setSaving(false); return }
       onSave(res.data)

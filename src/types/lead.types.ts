@@ -18,6 +18,9 @@ export interface Lead {
   intel_brief: string | null
   intel_fetched_at: string | null
   intel_annotation: string | null
+  call_count: number
+  message_count: number
+  email_count: number
   created_at: string
   last_activity: string
 }
@@ -56,6 +59,9 @@ export interface LeadInsert {
   curriculum?: string[] | null
   source?: string | null
   stage: PipelineStage
+  call_count?: number
+  message_count?: number
+  email_count?: number
 }
 
 export interface CSVRow {

@@ -8,7 +8,7 @@ import { AppUser } from '@/types/user.types'
 import { Script } from '@/types/script.types'
 import { CONTACT_TYPES } from '@/lib/constants'
 import { useUser } from '@/hooks/useUser'
-import { getLeadById, updateLeadStage, updateLeadAssignment } from '@/services/leadService'
+import { getLeadById, updateLeadStage, updateLeadAssignment, incrementLeadCount } from '@/services/leadService'
 import { getActivityForLead, addNote, logStageChange } from '@/services/activityService'
 import { getAllUsers } from '@/services/userService'
 import { getScriptsByContactType, assignScriptToLead, removeScriptFromLead, getLeadAssignedScript } from '@/services/scriptService'
@@ -104,6 +104,17 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
     setAssigningSaving(false)
   }
 
+  async function handleCountChange(
+    field: 'call_count' | 'message_count' | 'email_count',
+    delta: 1 | -1
+  ) {
+    if (!lead) return
+    // Optimistic update
+    setLead((prev) => prev ? { ...prev, [field]: Math.max(0, (prev[field] ?? 0) + delta) } : prev)
+    const res = await incrementLeadCount(lead.id, field, delta)
+    if (res.success) setLead(res.data)
+  }
+
   async function handleAddNote() {
     if (!noteText.trim() || !lead || !currentUser) return
     setAddingNote(true)
@@ -166,6 +177,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
             saving={saving}
             onStageChange={handleStageChange}
             onAssignmentChange={handleAssignmentChange}
+            onCountChange={handleCountChange}
             onViewScripts={onViewScripts ? () => onViewScripts(lead.id) : undefined}
           />
         ) : activeTab === 'script' ? (

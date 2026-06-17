@@ -20,6 +20,9 @@ export interface LeadFormValues {
   lat: string
   lng: string
   notes: string
+  call_count: string
+  message_count: string
+  email_count: string
 }
 
 interface LeadFormFieldsProps {
@@ -207,6 +210,25 @@ export default function LeadFormFields({ values, onChange }: LeadFormFieldsProps
               {c}
             </label>
           ))}
+        </div>
+      </div>
+
+      {/* Outreach counters */}
+      <div className="rounded-xl border border-slate-200 p-3 space-y-3 bg-slate-50">
+        <p className="text-xs font-semibold text-slate-500 uppercase">Previous Outreach</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className={LABEL_CLS}>Cold Calls</label>
+            <input type="number" min="0" className={INPUT_CLS + ' bg-white'} value={values.call_count} onChange={(e) => set('call_count', e.target.value)} />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Messages</label>
+            <input type="number" min="0" className={INPUT_CLS + ' bg-white'} value={values.message_count} onChange={(e) => set('message_count', e.target.value)} />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Emails</label>
+            <input type="number" min="0" className={INPUT_CLS + ' bg-white'} value={values.email_count} onChange={(e) => set('email_count', e.target.value)} />
+          </div>
         </div>
       </div>
 

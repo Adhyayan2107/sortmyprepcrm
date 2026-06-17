@@ -95,7 +95,7 @@ export default function TopBar() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-[9999]">
             <div className="px-3 py-2.5 border-b border-slate-100">
               <p className="text-sm font-medium text-slate-900 truncate">{displayName}</p>
               <p className="text-xs text-slate-500 truncate capitalize">{user?.role ?? 'rep'}</p>

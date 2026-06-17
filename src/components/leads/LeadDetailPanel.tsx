@@ -8,7 +8,7 @@ import { AppUser } from '@/types/user.types'
 import { Script } from '@/types/script.types'
 import { CONTACT_TYPES } from '@/lib/constants'
 import { useUser } from '@/hooks/useUser'
-import { getLeadById, updateLeadStage, updateLeadAssignment, incrementLeadCount } from '@/services/leadService'
+import { getLeadById, updateLeadStage, updateLeadAssignment, incrementLeadCount, deleteLead } from '@/services/leadService'
 import { getActivityForLead, addNote, logStageChange } from '@/services/activityService'
 import { getAllUsers } from '@/services/userService'
 import { getScriptsByContactType, assignScriptToLead, removeScriptFromLead, getLeadAssignedScript } from '@/services/scriptService'
@@ -33,9 +33,10 @@ interface LeadDetailPanelProps {
   onClose: () => void
   onStageChange?: (id: string, stage: PipelineStage) => void
   onViewScripts?: (leadId: string) => void
+  onDelete?: (id: string) => void
 }
 
-export default function LeadDetailPanel({ leadId, onClose, onStageChange, onViewScripts }: LeadDetailPanelProps) {
+export default function LeadDetailPanel({ leadId, onClose, onStageChange, onViewScripts, onDelete }: LeadDetailPanelProps) {
   const { user: currentUser } = useUser()
   const [lead, setLead] = useState<Lead | null>(null)
   const [activity, setActivity] = useState<ActivityLog[]>([])
@@ -104,6 +105,17 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
     setAssigningSaving(false)
   }
 
+  async function handleDelete() {
+    if (!lead) return
+    const confirmed = window.confirm(`Delete "${lead.name}"? This cannot be undone.`)
+    if (!confirmed) return
+    const res = await deleteLead(lead.id)
+    if (res.success) {
+      onDelete?.(lead.id)
+      onClose()
+    }
+  }
+
   async function handleCountChange(
     field: 'call_count' | 'message_count' | 'email_count',
     delta: 1 | -1
@@ -134,12 +146,19 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
         </h2>
         <div className="flex items-center gap-2 shrink-0">
           {lead && (
-            <button onClick={() => setShowEditModal(true)} className="text-slate-400 hover:text-[#2563EB] transition-colors" title="Edit lead">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z" />
-              </svg>
-            </button>
+            <>
+              <button onClick={() => setShowEditModal(true)} className="text-slate-400 hover:text-[#2563EB] transition-colors" title="Edit lead">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z" />
+                </svg>
+              </button>
+              <button onClick={handleDelete} className="text-slate-400 hover:text-red-500 transition-colors" title="Delete lead">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </>
           )}
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

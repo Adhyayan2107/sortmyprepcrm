@@ -129,6 +129,20 @@ export async function updateLeadDetails(
   return { success: true, data: data as Lead }
 }
 
+export async function deleteLead(id: string): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase.from(TABLES.LEADS).delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
+export async function bulkDeleteLeads(ids: string[]): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase.from(TABLES.LEADS).delete().in('id', ids)
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
 export async function incrementLeadCount(
   id: string,
   field: 'call_count' | 'message_count' | 'email_count',

@@ -8,7 +8,7 @@ import { PipelineStage } from '@/types/pipeline.types'
 import { Lead, LeadListRow } from '@/types/lead.types'
 import { AppUser } from '@/types/user.types'
 import { getAllUsers } from '@/services/userService'
-import { bulkAssignLeads } from '@/services/leadService'
+import { bulkAssignLeads, bulkDeleteLeads } from '@/services/leadService'
 import { useUser } from '@/hooks/useUser'
 import LeadDetailPanel from '@/components/leads/LeadDetailPanel'
 import LeadFormModal from '@/components/leads/LeadFormModal'
@@ -32,6 +32,7 @@ function LeadsPageInner() {
   const [users, setUsers] = useState<AppUser[]>([])
   const [bulkAssignTo, setBulkAssignTo] = useState('')
   const [bulkSaving, setBulkSaving] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [showScripts, setShowScripts] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editRow, setEditRow] = useState<LeadListRow | null>(null)
@@ -78,6 +79,16 @@ function LeadsPageInner() {
     setBulkSaving(false)
   }
 
+  async function handleBulkDelete() {
+    if (selected.size === 0) return
+    const confirmed = window.confirm(`Delete ${selected.size} lead${selected.size > 1 ? 's' : ''}? This cannot be undone.`)
+    if (!confirmed) return
+    setBulkDeleting(true)
+    const res = await bulkDeleteLeads([...selected])
+    if (res.success) { setSelected(new Set()); await refetch() }
+    setBulkDeleting(false)
+  }
+
   if (loading) return <LoadingSpinner />
   if (error) return <p className="text-red-500 p-4">{error}</p>
 
@@ -119,8 +130,17 @@ function LeadsPageInner() {
 
       {selected.size > 0 && (
         <BulkAssignBar
-          selectedCount={selected.size} bulkAssignTo={bulkAssignTo} saving={bulkSaving} users={users}
-          onAssignToChange={setBulkAssignTo} onAssign={handleBulkAssign} onClear={() => setSelected(new Set())}
+          selectedCount={selected.size}
+          totalCount={filtered.length}
+          bulkAssignTo={bulkAssignTo}
+          saving={bulkSaving}
+          deleting={bulkDeleting}
+          users={users}
+          onAssignToChange={setBulkAssignTo}
+          onAssign={handleBulkAssign}
+          onDelete={handleBulkDelete}
+          onClear={() => setSelected(new Set())}
+          onSelectAll={toggleSelectAll}
         />
       )}
 
@@ -145,6 +165,7 @@ function LeadsPageInner() {
             onClose={() => setSelectedId(null)}
             onStageChange={() => refetch()}
             onViewScripts={() => setShowScripts(true)}
+            onDelete={() => { setSelectedId(null); refetch() }}
           />
         </>
       )}

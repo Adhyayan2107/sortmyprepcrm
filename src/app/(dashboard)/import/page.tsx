@@ -94,6 +94,20 @@ export default function ImportPage() {
       {/* ── Upload ── */}
       {step === 'upload' && (
         <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
+          {/* Template download */}
+          <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-blue-800">Download the official import template</p>
+              <p className="text-xs text-blue-500 mt-0.5">Includes all columns, colour-coded hints, and an Instructions sheet</p>
+            </div>
+            <a
+              href="/SortMyPrep CRM - Lead Import Template.xlsx"
+              download
+              className="shrink-0 ml-4 px-4 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Download Template
+            </a>
+          </div>
           {/* Default country */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">

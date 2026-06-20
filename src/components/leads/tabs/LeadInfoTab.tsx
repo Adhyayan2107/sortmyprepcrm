@@ -52,7 +52,43 @@ function CounterRow({
   )
 }
 
+// Structured notes written by the importer follow the pattern "Key: Value\n..."
+// This parses them into displayable founder fields + remaining free-form text.
+function parseImportedNotes(notes: string | null) {
+  if (!notes) return { founderRows: [], freeText: null }
+
+  const IMPORT_KEYS: Record<string, { label: string; isLink?: boolean }> = {
+    'Type':            { label: 'Type' },
+    'Category':        { label: 'Category' },
+    'Founder':         { label: 'Name' },
+    'Founder Phone':   { label: 'Phone' },
+    'Founder Email':   { label: 'Email' },
+    'Founder LinkedIn':{ label: 'LinkedIn', isLink: true },
+    'No. of Teachers': { label: 'No. of Teachers' },
+  }
+
+  const founderRows: Array<{ label: string; value: string; isLink: boolean }> = []
+  const freeLines: string[] = []
+
+  for (const line of notes.split('\n')) {
+    let matched = false
+    for (const [key, meta] of Object.entries(IMPORT_KEYS)) {
+      if (line.startsWith(`${key}: `)) {
+        const value = line.slice(`${key}: `.length).trim()
+        if (value) founderRows.push({ label: meta.label, value, isLink: !!meta.isLink })
+        matched = true
+        break
+      }
+    }
+    if (!matched && line.trim()) freeLines.push(line)
+  }
+
+  return { founderRows, freeText: freeLines.length ? freeLines.join('\n') : null }
+}
+
 export default function LeadInfoTab({ lead, teamUsers, saving, onStageChange, onAssignmentChange, onCountChange, onViewScripts }: Props) {
+  const { founderRows, freeText } = parseImportedNotes(lead.notes)
+
   return (
     <div className="px-5 py-4 space-y-5">
       <div className="space-y-1">
@@ -167,10 +203,31 @@ export default function LeadInfoTab({ lead, teamUsers, saving, onStageChange, on
         </div>
       </div>
 
-      {lead.notes && (
+      {founderRows.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Founder / Contact</p>
+          <div className="bg-slate-50 rounded-lg px-3 py-2 space-y-1.5">
+            {founderRows.map(({ label, value, isLink }) => (
+              <div key={label} className="flex gap-2 text-sm">
+                <span className="text-gray-400 shrink-0 w-24">{label}</span>
+                {isLink ? (
+                  <a href={value} target="_blank" rel="noreferrer"
+                    className="text-[var(--color-brand-accent)] hover:underline break-all">
+                    {value}
+                  </a>
+                ) : (
+                  <span className="text-gray-700 break-all">{value}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {freeText && (
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Notes</p>
-          <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2">{lead.notes}</p>
+          <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 whitespace-pre-line">{freeText}</p>
         </div>
       )}
 

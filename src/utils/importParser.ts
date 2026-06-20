@@ -4,7 +4,7 @@ import { LeadInsert } from '@/types/lead.types'
 import { CURRICULA } from '@/lib/constants'
 import { PipelineStage } from '@/types/pipeline.types'
 
-// Maps any known column header variant (lowercase) → internal field name
+// Maps lowercase column header → internal field name
 const COL_ALIAS: Record<string, string> = {
   // name
   name: 'name',
@@ -73,7 +73,7 @@ const COL_ALIAS: Record<string, string> = {
   'google maps url': 'google_maps_link',
   'google map link': 'google_maps_link',
 
-  // sheet-specific columns that get merged into notes
+  // sheet-specific columns merged into notes
   type: 'type_col',
   'type of center': 'type_col',
   'type of centre': 'type_col',
@@ -105,7 +105,7 @@ const STAGE_MAP: Record<string, PipelineStage> = {
 export interface ParsedImportResult {
   valid: LeadInsert[]
   errors: Array<{ row: number; reason: string }>
-  geocodable: number // rows with city/country but no coords
+  geocodable: number
 }
 
 export interface ImportOptions {
@@ -138,33 +138,96 @@ async function parseXlsx(file: File, options: ImportOptions): Promise<ParsedImpo
     return { valid: [], errors: [{ row: 0, reason: 'Empty file' }], geocodable: 0 }
   }
 
-  const headers = raw[0].map(v => (v == null ? '' : String(v).trim()))
+  const mainHeaders = raw[0].map(v => (v == null ? '' : String(v).trim()))
 
-  // Skip sub-header rows: if the first 5 primary columns of row 1 are all empty,
-  // it's a continuation/sub-header row (like the follow-up tracking row in your sheet)
+  // Detect sub-header row: if row 1 has empty primary columns (0-4), skip it
+  let subHeaders: string[] = []
   let dataStart = 1
   if (raw.length > 1) {
     const row1Primary = raw[1].slice(0, 5).filter(v => v != null && String(v).trim() !== '')
-    if (row1Primary.length === 0) dataStart = 2
+    if (row1Primary.length === 0) {
+      subHeaders = raw[1].map(v => (v == null ? '' : String(v).trim()))
+      dataStart = 2
+    }
   }
 
-  // Build column-index → internal-field map
+  // Build column-index → internal-field map from COL_ALIAS
   const colMap: Record<number, string> = {}
-  headers.forEach((h, i) => {
+  mainHeaders.forEach((h, i) => {
     const alias = COL_ALIAS[h.toLowerCase()]
     if (alias) colMap[i] = alias
   })
 
-  const rows = raw.slice(dataStart).map(row =>
-    Object.fromEntries(
+  // Detect outreach column groups for counting
+  const outreach = detectOutreachGroups(mainHeaders, subHeaders)
+
+  const rows = raw.slice(dataStart).map(row => {
+    // Map recognized fields
+    const obj = Object.fromEntries(
       Object.entries(colMap).map(([i, field]) => [
         field,
         row[+i] == null ? '' : String(row[+i]).trim(),
       ])
+    ) as Record<string, string>
+
+    // Count outreach activity from filled cells (skip Comments columns)
+    obj._message_count = String(
+      outreach.messageIndices.filter(i => row[i] != null && String(row[i]).trim() !== '').length
     )
-  )
+    obj._call_count = String(
+      outreach.callIndices.filter(i => row[i] != null && String(row[i]).trim() !== '').length
+    )
+    obj._email_count = String(
+      outreach.emailIndices.filter(i => row[i] != null && String(row[i]).trim() !== '').length
+    )
+
+    return obj
+  })
 
   return transformRows(rows, dataStart + 1, options)
+}
+
+// Detect which column indices belong to each outreach group.
+// Groups are identified by main-header keywords; Comments sub-columns are excluded.
+function detectOutreachGroups(mainHeaders: string[], subHeaders: string[]) {
+  const main = mainHeaders.map(h => h.toLowerCase())
+  const sub = subHeaders.map(h => h.toLowerCase())
+
+  let msgStart = -1
+  let callStart = -1
+  let emailStart = -1
+
+  main.forEach((h, i) => {
+    if (h.includes('whatsapp') || h === 'messages') msgStart = i
+    else if (h === 'phone call' || h === 'calls' || h === 'phone calls') callStart = i
+    else if (h.includes('email')) emailStart = i
+  })
+
+  // Boundaries: next non-empty main header after each group start
+  const boundaries = main
+    .map((h, i) => (h !== '' ? i : -1))
+    .filter(i => i >= 0)
+    .concat(main.length)
+
+  function nextBoundary(start: number): number {
+    return boundaries.find(b => b > start) ?? main.length
+  }
+
+  function countableIndices(start: number): number[] {
+    if (start < 0) return []
+    const end = nextBoundary(start)
+    const indices: number[] = []
+    for (let i = start; i < end; i++) {
+      if (!sub[i]?.includes('comment')) indices.push(i)
+    }
+    return indices
+  }
+
+  return {
+    messageIndices: countableIndices(msgStart),
+    callIndices: countableIndices(callStart),
+    emailIndices: countableIndices(emailStart),
+  }
 }
 
 // ─── CSV ─────────────────────────────────────────────────────────────────────
@@ -174,7 +237,6 @@ function parseCsv(file: File, options: ImportOptions): Promise<ParsedImportResul
     Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
-      // Map header to alias; unknown headers pass through (ignored in transform)
       transformHeader: h => COL_ALIAS[h.trim().toLowerCase()] ?? h.trim().toLowerCase(),
       complete: res => resolve(transformRows(res.data, 2, options)),
       error: err =>
@@ -223,21 +285,25 @@ function transformRows(
     if (row.lat && !isNaN(parseFloat(row.lat))) lat = parseFloat(row.lat)
     if (row.lng && !isNaN(parseFloat(row.lng))) lng = parseFloat(row.lng)
 
-    // Count rows that could be geocoded via Mapbox (have city or country, but no coords yet)
     if (!lat && !lng) geocodable++
 
     // Stage
     const stage: PipelineStage =
       STAGE_MAP[row.stage?.trim().toLowerCase() ?? ''] ?? 'New Lead'
 
-    // Curriculum (pipe-separated, validated against known values)
+    // Curriculum (pipe-separated, validated)
     const curricula = row.curriculum
       ?.split('|')
       .map(c => c.trim())
       .filter(c => (CURRICULA as readonly string[]).includes(c))
     const curriculum = curricula?.length ? curricula : null
 
-    // Build notes from extra sheet-specific columns
+    // Outreach counts (from xlsx group detection, 0 for CSV)
+    const call_count = parseInt(row._call_count ?? '0') || 0
+    const message_count = parseInt(row._message_count ?? '0') || 0
+    const email_count = parseInt(row._email_count ?? '0') || 0
+
+    // Build structured notes from sheet-specific columns
     const noteParts: string[] = []
     if (row.type_col) noteParts.push(`Type: ${row.type_col}`)
     if (row.category_of_lead) noteParts.push(`Category: ${row.category_of_lead}`)
@@ -260,6 +326,9 @@ function transformRows(
       source: row.source?.trim() || null,
       stage,
       notes: noteParts.length ? noteParts.join('\n') : null,
+      call_count: call_count > 0 ? call_count : undefined,
+      message_count: message_count > 0 ? message_count : undefined,
+      email_count: email_count > 0 ? email_count : undefined,
     })
   })
 

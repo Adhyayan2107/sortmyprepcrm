@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { parseCSVFile } from '@/utils/csvParser'
+import { parseImportFile } from '@/utils/importParser'
+import { batchGeocode } from '@/utils/geocoder'
 import { bulkInsertLeads } from '@/services/leadService'
 import { LeadInsert } from '@/types/lead.types'
 import ImportPreviewTable from '@/components/leads/ImportPreviewTable'
@@ -17,19 +18,40 @@ interface ImportSummary {
 export default function ImportPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState<Step>('upload')
+  const [defaultCountry, setDefaultCountry] = useState('')
   const [leads, setLeads] = useState<LeadInsert[]>([])
   const [parseErrors, setParseErrors] = useState<Array<{ row: number; reason: string }>>([])
   const [summary, setSummary] = useState<ImportSummary | null>(null)
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [processingMsg, setProcessingMsg] = useState<string | null>(null)
+  const [geocodeProgress, setGeocodeProgress] = useState<{ done: number; total: number } | null>(null)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const result = await parseCSVFile(file)
-    setLeads(result.valid)
-    setParseErrors(result.errors)
+    setProcessingMsg('Parsing file…')
+    setGeocodeProgress(null)
+
+    const parsed = await parseImportFile(file, {
+      defaultCountry: defaultCountry.trim() || undefined,
+    })
+
+    let finalLeads = parsed.valid
+
+    if (parsed.geocodable > 0) {
+      setProcessingMsg(`Geocoding locations…`)
+      setGeocodeProgress({ done: 0, total: parsed.geocodable })
+      finalLeads = await batchGeocode(parsed.valid, (done, total) => {
+        setGeocodeProgress({ done, total })
+      })
+    }
+
+    setLeads(finalLeads)
+    setParseErrors(parsed.errors)
+    setProcessingMsg(null)
+    setGeocodeProgress(null)
     setStep('preview')
   }
 
@@ -60,6 +82,8 @@ export default function ImportPage() {
     setParseErrors([])
     setSummary(null)
     setImportError(null)
+    setProcessingMsg(null)
+    setGeocodeProgress(null)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -67,25 +91,94 @@ export default function ImportPage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-[var(--color-brand-primary)] mb-6">Import Leads</h1>
 
+      {/* ── Upload ── */}
       {step === 'upload' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <p className="text-sm text-gray-500 mb-2">
-            Upload a CSV with columns: <code className="bg-gray-100 px-1 rounded">name, country, city, lat, lng, website, phone, email, curriculum, source</code>
-          </p>
-          <p className="text-xs text-gray-400 mb-6">Curriculum is pipe-separated: IB|IGCSE|A-Levels</p>
-          <label className="cursor-pointer inline-block bg-[var(--color-brand-accent)] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[var(--color-brand-primary)] transition-colors">
-            Choose CSV File
+        <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
+          {/* Default country */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Default Country <span className="font-normal text-gray-400">(applied when your sheet has no Country column)</span>
+            </label>
             <input
-              ref={inputRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileChange}
+              type="text"
+              placeholder="e.g. Singapore"
+              value={defaultCountry}
+              onChange={e => setDefaultCountry(e.target.value)}
+              className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
             />
-          </label>
+          </div>
+
+          {/* File picker */}
+          <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+            {processingMsg ? (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700">{processingMsg}</p>
+                {geocodeProgress && (
+                  <div className="w-full max-w-xs mx-auto">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>{geocodeProgress.done} / {geocodeProgress.total}</span>
+                      <span>{Math.round((geocodeProgress.done / geocodeProgress.total) * 100)}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[var(--color-brand-accent)] transition-all duration-200"
+                        style={{ width: `${(geocodeProgress.done / geocodeProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {!geocodeProgress && (
+                  <div className="w-6 h-6 border-2 border-[var(--color-brand-accent)] border-t-transparent rounded-full animate-spin mx-auto" />
+                )}
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-500 mb-1">
+                  Supports <strong>.xlsx</strong> and <strong>.csv</strong>
+                </p>
+                <p className="text-xs text-gray-400 mb-4">
+                  Columns auto-detected — any extra columns are safely ignored
+                </p>
+                <label className="cursor-pointer inline-block bg-[var(--color-brand-accent)] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[var(--color-brand-primary)] transition-colors">
+                  Choose File
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </>
+            )}
+          </div>
+
+          {/* Column reference */}
+          <details className="text-xs text-gray-500">
+            <summary className="cursor-pointer font-medium text-gray-600 select-none">
+              Supported column names
+            </summary>
+            <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-1 pl-2">
+              <div><span className="font-medium text-gray-700">name</span> — or "Name of Center"</div>
+              <div><span className="font-medium text-gray-700">country</span> — or use Default Country above</div>
+              <div><span className="font-medium text-gray-700">city</span></div>
+              <div><span className="font-medium text-gray-700">phone</span> — or "Centre / Admin Number"</div>
+              <div><span className="font-medium text-gray-700">email</span> — or "Centre / Admin Email"</div>
+              <div><span className="font-medium text-gray-700">website</span></div>
+              <div><span className="font-medium text-gray-700">status of lead</span> — maps to pipeline stage</div>
+              <div><span className="font-medium text-gray-700">type</span> — saved in notes</div>
+              <div><span className="font-medium text-gray-700">founder name / number / email / linkedin</span> — saved in notes</div>
+              <div><span className="font-medium text-gray-700">number of teachers</span> — saved in notes</div>
+              <div><span className="font-medium text-gray-700">google maps link</span> — auto-extracts coordinates</div>
+              <div><span className="font-medium text-gray-700">lat / lng</span> — manual coordinates</div>
+              <div><span className="font-medium text-gray-700">curriculum</span> — pipe-separated: IB|IGCSE|A-Levels</div>
+              <div><span className="font-medium text-gray-700">source</span></div>
+            </div>
+          </details>
         </div>
       )}
 
+      {/* ── Preview ── */}
       {step === 'preview' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -94,11 +187,16 @@ export default function ImportPage() {
                 {leads.length} valid row{leads.length !== 1 ? 's' : ''} ready to import
               </p>
               {parseErrors.length > 0 && (
-                <p className="text-sm text-red-500">{parseErrors.length} row{parseErrors.length !== 1 ? 's' : ''} with errors (will be skipped)</p>
+                <p className="text-sm text-red-500">
+                  {parseErrors.length} row{parseErrors.length !== 1 ? 's' : ''} skipped (see below)
+                </p>
               )}
             </div>
             <div className="flex gap-3">
-              <button onClick={handleReset} className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50">
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50"
+              >
                 Cancel
               </button>
               <button
@@ -117,7 +215,7 @@ export default function ImportPage() {
 
           {parseErrors.length > 0 && (
             <div className="bg-red-50 rounded-lg p-4 space-y-1">
-              <p className="text-sm font-semibold text-red-700">Rows with errors (skipped):</p>
+              <p className="text-sm font-semibold text-red-700">Skipped rows:</p>
               {parseErrors.map((e, i) => (
                 <p key={i} className="text-sm text-red-600">Row {e.row}: {e.reason}</p>
               ))}
@@ -128,6 +226,7 @@ export default function ImportPage() {
         </div>
       )}
 
+      {/* ── Done ── */}
       {step === 'done' && summary && (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center space-y-4">
           <div className="text-5xl">✓</div>

@@ -187,7 +187,7 @@ export async function bulkInsertLeads(
   const duplicates: string[] = []
 
   for (const lead of leads) {
-    const key = `${lead.name.toLowerCase()}::${lead.country.toLowerCase()}`
+    const key = `${lead.name.toLowerCase()}::${(lead.country ?? '').toLowerCase()}`
     if (existingSet.has(key) || seenInBatch.has(key)) {
       duplicates.push(lead.name)
     } else {

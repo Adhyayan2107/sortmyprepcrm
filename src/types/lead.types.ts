@@ -59,6 +59,7 @@ export interface LeadInsert {
   curriculum?: string[] | null
   source?: string | null
   stage: PipelineStage
+  notes?: string | null
   call_count?: number
   message_count?: number
   email_count?: number

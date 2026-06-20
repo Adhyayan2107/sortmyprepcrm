@@ -217,7 +217,9 @@ export default function ImportPage() {
             <div className="bg-red-50 rounded-lg p-4 space-y-1">
               <p className="text-sm font-semibold text-red-700">Skipped rows:</p>
               {parseErrors.map((e, i) => (
-                <p key={i} className="text-sm text-red-600">Row {e.row}: {e.reason}</p>
+                <p key={i} className="text-sm text-red-600">
+                  {e.row > 0 ? `Row ${e.row}: ` : ''}{e.reason}
+                </p>
               ))}
             </div>
           )}

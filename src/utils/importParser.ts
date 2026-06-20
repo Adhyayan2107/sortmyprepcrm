@@ -255,6 +255,7 @@ function transformRows(
   const valid: LeadInsert[] = []
   const errors: Array<{ row: number; reason: string }> = []
   let geocodable = 0
+  let missingCountry = 0
 
   rows.forEach((row, idx) => {
     const rowNum = startRow + idx
@@ -270,7 +271,7 @@ function transformRows(
 
     const country = row.country?.trim() || options.defaultCountry?.trim() || ''
     if (!country) {
-      errors.push({ row: rowNum, reason: 'No country — add a Country column or set Default Country above' })
+      missingCountry++
       return
     }
 
@@ -331,6 +332,10 @@ function transformRows(
       email_count,
     })
   })
+
+  if (missingCountry > 0) {
+    errors.unshift({ row: -1, reason: `Country not added — set a Default Country above (${missingCountry} rows skipped)` })
+  }
 
   return { valid, errors, geocodable }
 }

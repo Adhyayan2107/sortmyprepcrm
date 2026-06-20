@@ -259,14 +259,14 @@ function transformRows(
   rows.forEach((row, idx) => {
     const rowNum = startRow + idx
 
-    // Skip blank rows
-    if (Object.values(row).every(v => v === '' || v == null)) return
+    // Skip blank rows — ignore internal _prefixed fields added by xlsx parser
+    const dataValues = Object.entries(row)
+      .filter(([k]) => !k.startsWith('_'))
+      .map(([, v]) => v)
+    if (dataValues.every(v => v === '' || v == null)) return
 
     const name = row.name?.trim()
-    if (!name) {
-      errors.push({ row: rowNum, reason: 'Missing name' })
-      return
-    }
+    if (!name) return // truly no name and non-empty row is an empty/filler row — skip silently
 
     const country = row.country?.trim() || options.defaultCountry?.trim() || ''
     if (!country) {
@@ -326,9 +326,9 @@ function transformRows(
       source: row.source?.trim() || null,
       stage,
       notes: noteParts.length ? noteParts.join('\n') : null,
-      call_count: call_count > 0 ? call_count : undefined,
-      message_count: message_count > 0 ? message_count : undefined,
-      email_count: email_count > 0 ? email_count : undefined,
+      call_count,
+      message_count,
+      email_count,
     })
   })
 

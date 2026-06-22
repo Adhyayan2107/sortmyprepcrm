@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Lead, LeadInsert } from '@/types/lead.types'
 import { PipelineStage } from '@/types/pipeline.types'
+import { LeadType } from '@/lib/constants'
 import { createLead, updateLeadDetails } from '@/services/leadService'
 import LeadFormFields, { LeadFormValues } from './LeadFormFields'
 
@@ -23,6 +24,7 @@ function toValues(initial?: Partial<Lead>): LeadFormValues {
     email: initial?.email ?? '',
     stage: initial?.stage ?? 'New Lead',
     source: initial?.source ?? '',
+    lead_type: initial?.lead_type ?? '',
     curriculum: initial?.curriculum ?? [],
     lat: initial?.lat != null ? String(initial.lat) : '',
     lng: initial?.lng != null ? String(initial.lng) : '',
@@ -57,6 +59,7 @@ export default function LeadFormModal({ mode, initial, onSave, onClose }: LeadFo
         email: values.email.trim() || null,
         stage: values.stage as PipelineStage,
         source: values.source || null,
+        lead_type: values.lead_type ? (values.lead_type as LeadType) : null,
         curriculum: values.curriculum.length > 0 ? values.curriculum : null,
         lat: values.lat !== '' ? Number(values.lat) : null,
         lng: values.lng !== '' ? Number(values.lng) : null,
@@ -80,6 +83,7 @@ export default function LeadFormModal({ mode, initial, onSave, onClose }: LeadFo
       if (values.email !== init.email) updates.email = values.email.trim() || null
       if (values.stage !== init.stage) updates.stage = values.stage
       if (values.source !== init.source) updates.source = values.source || null
+      if (values.lead_type !== init.lead_type) updates.lead_type = values.lead_type ? (values.lead_type as LeadType) : null
       if (JSON.stringify(values.curriculum) !== JSON.stringify(init.curriculum))
         updates.curriculum = values.curriculum.length > 0 ? values.curriculum : null
       if (values.lat !== init.lat) updates.lat = values.lat !== '' ? Number(values.lat) : null

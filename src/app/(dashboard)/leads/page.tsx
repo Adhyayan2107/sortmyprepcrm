@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useLeadRows } from '@/hooks/useLeads'
 import { PipelineStage } from '@/types/pipeline.types'
 import { Lead, LeadListRow } from '@/types/lead.types'
+import { LeadType } from '@/lib/constants'
 import { AppUser } from '@/types/user.types'
 import { getAllUsers } from '@/services/userService'
 import { bulkAssignLeads, bulkDeleteLeads } from '@/services/leadService'
@@ -23,6 +24,8 @@ function LeadsPageInner() {
   const { rows, loading, error, refetch } = useLeadRows()
   const { user: currentUser } = useUser()
   const [viewMode, setViewMode] = useState<'all' | 'mine'>('all')
+  const [categoryTab, setCategoryTab] = useState<'all' | 'school' | 'tuition'>('all')
+  const [tuitionSubTab, setTuitionSubTab] = useState<'all' | 'center' | 'teacher'>('all')
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'All'>('All')
   const [countryFilter, setCountryFilter] = useState('')
@@ -60,8 +63,16 @@ function LeadsPageInner() {
     const matchCountry = !countryFilter || r.country === countryFilter
     const matchAssigned = !assignedFilter || r.assigned_to === assignedFilter
     const matchMine = viewMode === 'all' || r.assigned_to === currentUser?.id
-    return matchSearch && matchStage && matchCountry && matchAssigned && matchMine
-  }), [rows, search, stageFilter, countryFilter, assignedFilter, viewMode, currentUser])
+    let matchCategory = true
+    if (categoryTab === 'school') {
+      matchCategory = r.lead_type === 'School'
+    } else if (categoryTab === 'tuition') {
+      if (tuitionSubTab === 'center') matchCategory = r.lead_type === 'Tuition Center'
+      else if (tuitionSubTab === 'teacher') matchCategory = r.lead_type === 'Personal Teacher'
+      else matchCategory = r.lead_type === 'Tuition Center' || r.lead_type === 'Personal Teacher'
+    }
+    return matchSearch && matchStage && matchCountry && matchAssigned && matchMine && matchCategory
+  }), [rows, search, stageFilter, countryFilter, assignedFilter, viewMode, currentUser, categoryTab, tuitionSubTab])
 
   function toggleSelect(id: string) {
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -96,7 +107,13 @@ function LeadsPageInner() {
     <div className="px-4 py-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-[var(--color-brand-primary)]">
-          {viewMode === 'mine' ? 'My Leads' : 'All Leads'}
+          {viewMode === 'mine'
+            ? 'My Leads'
+            : categoryTab === 'school'
+            ? 'Schools'
+            : categoryTab === 'tuition'
+            ? tuitionSubTab === 'center' ? 'Tuition Centers' : tuitionSubTab === 'teacher' ? 'Personal Teachers' : 'Tuition Leads'
+            : 'All Leads'}
           <span className="ml-2 text-base font-normal text-gray-400">({filtered.length})</span>
         </h1>
         <div className="flex items-center gap-2">
@@ -120,6 +137,46 @@ function LeadsPageInner() {
             + Add Lead
           </button>
         </div>
+      </div>
+
+      {/* Category tabs */}
+      <div className="mb-3">
+        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+          {([['all', 'All Leads'], ['school', 'Schools'], ['tuition', 'Tuition']] as const).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => { setCategoryTab(val); setTuitionSubTab('all') }}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                categoryTab === val ? 'bg-white shadow-sm text-[#0F172A]' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {categoryTab === 'tuition' && (
+          <div className="flex gap-1 mt-2 ml-1">
+            {([['all', 'All Tuition'], ['center', 'Tuition Centers'], ['teacher', 'Personal Teachers']] as const).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setTuitionSubTab(val)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors border ${
+                  tuitionSubTab === val
+                    ? val === 'center'
+                      ? 'bg-amber-500 border-amber-500 text-white'
+                      : val === 'teacher'
+                      ? 'bg-emerald-600 border-emerald-600 text-white'
+                      : 'bg-[#0F172A] border-[#0F172A] text-white'
+                    : 'border-slate-200 text-slate-500 hover:border-slate-400 bg-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <LeadsFilterBar

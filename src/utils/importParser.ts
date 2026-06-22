@@ -1,7 +1,7 @@
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { LeadInsert } from '@/types/lead.types'
-import { CURRICULA } from '@/lib/constants'
+import { CURRICULA, LeadType } from '@/lib/constants'
 import { PipelineStage } from '@/types/pipeline.types'
 
 // Maps lowercase column header → internal field name
@@ -84,6 +84,22 @@ const COL_ALIAS: Record<string, string> = {
   'number of teachers': 'num_teachers',
   'category of lead': 'category_of_lead',
   'lead category': 'category_of_lead',
+}
+
+const LEAD_TYPE_MAP: Record<string, LeadType> = {
+  school: 'School',
+  schools: 'School',
+  'tuition center': 'Tuition Center',
+  'tuition centre': 'Tuition Center',
+  'coaching center': 'Tuition Center',
+  'coaching centre': 'Tuition Center',
+  tuition: 'Tuition Center',
+  coaching: 'Tuition Center',
+  'personal teacher': 'Personal Teacher',
+  'private teacher': 'Personal Teacher',
+  teacher: 'Personal Teacher',
+  tutors: 'Personal Teacher',
+  tutor: 'Personal Teacher',
 }
 
 const STAGE_MAP: Record<string, PipelineStage> = {
@@ -304,6 +320,10 @@ function transformRows(
     const message_count = parseInt(row._message_count ?? '0') || 0
     const email_count = parseInt(row._email_count ?? '0') || 0
 
+    // Resolve lead_type from type_col or category_of_lead
+    const rawType = (row.type_col || row.category_of_lead || '').toLowerCase().trim()
+    const lead_type: LeadType | null = LEAD_TYPE_MAP[rawType] ?? null
+
     // Build structured notes from sheet-specific columns
     const noteParts: string[] = []
     if (row.type_col) noteParts.push(`Type: ${row.type_col}`)
@@ -326,6 +346,7 @@ function transformRows(
       curriculum,
       source: row.source?.trim() || null,
       stage,
+      lead_type,
       notes: noteParts.length ? noteParts.join('\n') : null,
       call_count,
       message_count,

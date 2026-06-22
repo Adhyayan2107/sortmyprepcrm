@@ -92,6 +92,17 @@ export default function LeadInfoTab({ lead, teamUsers, saving, onStageChange, on
   return (
     <div className="px-5 py-4 space-y-5">
       <div className="space-y-1">
+        {lead.lead_type && (
+          <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-1 ${
+            lead.lead_type === 'School'
+              ? 'bg-violet-100 text-violet-700'
+              : lead.lead_type === 'Tuition Center'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-emerald-100 text-emerald-700'
+          }`}>
+            {lead.lead_type}
+          </span>
+        )}
         <p className="text-sm text-gray-500">{[lead.city, lead.country].filter(Boolean).join(', ')}</p>
         {lead.website && (
           <a href={lead.website} target="_blank" rel="noreferrer"
@@ -145,6 +156,10 @@ export default function LeadInfoTab({ lead, teamUsers, saving, onStageChange, on
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-xs text-gray-400">Lead Type</p>
+          <p className="font-medium text-gray-700">{lead.lead_type ?? '—'}</p>
+        </div>
         <div>
           <p className="text-xs text-gray-400">Source</p>
           <p className="font-medium text-gray-700">{lead.source ?? '—'}</p>

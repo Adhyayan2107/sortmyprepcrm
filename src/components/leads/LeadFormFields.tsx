@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { PIPELINE_STAGES, LEAD_SOURCES, CURRICULA } from '@/lib/constants'
+import { PIPELINE_STAGES, LEAD_SOURCES, CURRICULA, LEAD_TYPES } from '@/lib/constants'
+import type { LeadType } from '@/lib/constants'
 
 const INPUT_CLS =
   'border border-slate-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[#2563EB]'
@@ -16,6 +17,7 @@ export interface LeadFormValues {
   email: string
   stage: string
   source: string
+  lead_type: LeadType | ''
   curriculum: string[]
   lat: string
   lng: string
@@ -167,6 +169,29 @@ export default function LeadFormFields({ values, onChange }: LeadFormFieldsProps
       <div>
         <label className={LABEL_CLS}>Name *</label>
         <input className={INPUT_CLS} value={values.name} onChange={(e) => set('name', e.target.value)} required />
+      </div>
+      <div>
+        <label className={LABEL_CLS}>Lead Type *</label>
+        <div className="flex gap-2">
+          {LEAD_TYPES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => set('lead_type', t)}
+              className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
+                values.lead_type === t
+                  ? t === 'School'
+                    ? 'bg-violet-600 border-violet-600 text-white'
+                    : t === 'Tuition Center'
+                    ? 'bg-amber-500 border-amber-500 text-white'
+                    : 'bg-emerald-600 border-emerald-600 text-white'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-400'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
       <div>
         <label className={LABEL_CLS}>Country *</label>

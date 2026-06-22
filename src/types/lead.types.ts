@@ -1,4 +1,5 @@
 import { PipelineStage } from './pipeline.types'
+import { LeadType } from '@/lib/constants'
 
 export interface Lead {
   id: string
@@ -13,6 +14,7 @@ export interface Lead {
   curriculum: string[] | null
   source: string | null
   stage: PipelineStage
+  lead_type: LeadType | null
   assigned_to: string | null
   notes: string | null
   intel_brief: string | null
@@ -31,6 +33,7 @@ export interface LeadMapPin {
   lat: number
   lng: number
   stage: PipelineStage
+  lead_type: LeadType | null
   country: string
   city: string | null
 }
@@ -41,6 +44,7 @@ export interface LeadListRow {
   country: string
   city: string | null
   stage: PipelineStage
+  lead_type: LeadType | null
   curriculum: string[] | null
   source: string | null
   created_at: string
@@ -59,6 +63,7 @@ export interface LeadInsert {
   curriculum?: string[] | null
   source?: string | null
   stage: PipelineStage
+  lead_type?: LeadType | null
   notes?: string | null
   call_count?: number
   message_count?: number

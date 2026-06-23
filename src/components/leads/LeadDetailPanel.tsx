@@ -147,17 +147,31 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
         <div className="flex items-center gap-2 shrink-0">
           {lead && (
             <>
-              <button onClick={() => setShowEditModal(true)} className="text-slate-400 hover:text-[#2563EB] transition-colors" title="Edit lead">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z" />
+              {currentUser?.role === 'admin' && (
+                <button onClick={() => setShowEditModal(true)} className="text-slate-400 hover:text-[#2563EB] transition-colors" title="Edit lead">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z" />
+                  </svg>
+                </button>
+              )}
+              {currentUser?.role === 'admin' && (
+                <button onClick={handleDelete} className="text-slate-400 hover:text-red-500 transition-colors" title="Delete lead">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+              <a
+                href={`/call/${lead.id}`}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
+                title="Start call"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-              </button>
-              <button onClick={handleDelete} className="text-slate-400 hover:text-red-500 transition-colors" title="Delete lead">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+                Call
+              </a>
             </>
           )}
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -194,6 +208,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
             lead={lead}
             teamUsers={teamUsers}
             saving={saving}
+            isAdmin={currentUser?.role === 'admin'}
             onStageChange={handleStageChange}
             onAssignmentChange={handleAssignmentChange}
             onCountChange={handleCountChange}

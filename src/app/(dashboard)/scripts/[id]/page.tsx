@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Script, ScriptRating } from '@/types/script.types'
 import { ServiceResult } from '@/types/api.types'
-import { getScriptById, updateScript, rateScript, getUserRating } from '@/services/scriptService'
+import { getScriptById, updateScript, rateScript, getUserRating, deleteScript } from '@/services/scriptService'
 import { useUser } from '@/hooks/useUser'
 import StarRating from '@/components/ui/StarRating'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -59,6 +59,14 @@ export default function ScriptDetailPage() {
   async function handleArchive() {
     if (!script) return
     const res = await updateScript(script.id, { archived: true })
+    if (res.success) router.push('/scripts')
+  }
+
+  async function handleDelete() {
+    if (!script) return
+    const confirmed = window.confirm(`Permanently delete "${script.title}"? This cannot be undone.`)
+    if (!confirmed) return
+    const res = await deleteScript(script.id)
     if (res.success) router.push('/scripts')
   }
 
@@ -125,12 +133,22 @@ export default function ScriptDetailPage() {
                 >
                   Edit
                 </button>
-                <button
-                  onClick={handleArchive}
-                  className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-500 hover:bg-red-50"
-                >
-                  Archive
-                </button>
+                {user?.role === 'admin' && (
+                  <>
+                    <button
+                      onClick={handleArchive}
+                      className="px-3 py-1.5 rounded-lg border border-amber-200 text-sm text-amber-600 hover:bg-amber-50"
+                    >
+                      Archive
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1.5 rounded-lg border border-red-200 text-sm text-red-500 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>

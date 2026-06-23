@@ -46,6 +46,28 @@ export async function addNote(
   return { success: true, data: data as ActivityLog }
 }
 
+export async function logCall(
+  leadId: string,
+  notes: string,
+  doneBy: string
+): Promise<ServiceResult<ActivityLog>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.ACTIVITY_LOG)
+    .insert({ lead_id: leadId, type: 'call', summary: notes, done_by: doneBy })
+    .select()
+    .single()
+
+  if (error) return { success: false, error: error.message }
+
+  await supabase
+    .from(TABLES.LEADS)
+    .update({ last_activity: new Date().toISOString() })
+    .eq('id', leadId)
+
+  return { success: true, data: data as ActivityLog }
+}
+
 export async function logStageChange(
   leadId: string,
   fromStage: PipelineStage,

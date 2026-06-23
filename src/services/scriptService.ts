@@ -131,6 +131,13 @@ export async function rateScript(
   return { success: true, data: data as ScriptRating }
 }
 
+export async function deleteScript(id: string): Promise<ServiceResult<null>> {
+  const supabase = createClient()
+  const { error } = await supabase.from(TABLES.SCRIPTS).delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: null }
+}
+
 export async function incrementUsageCount(id: string): Promise<void> {
   const supabase = createClient()
   await supabase.rpc('increment_script_usage', { script_id: id })

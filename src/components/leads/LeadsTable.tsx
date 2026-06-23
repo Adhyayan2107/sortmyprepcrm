@@ -21,6 +21,7 @@ interface LeadsTableProps {
   rows: LeadListRow[]
   selected: Set<string>
   users: AppUser[]
+  isAdmin?: boolean
   onSelect: (id: string) => void
   onSelectAll: () => void
   onRowClick: (id: string) => void
@@ -34,9 +35,9 @@ const EditIcon = () => (
   </svg>
 )
 
-const HEADERS = ['Name', 'Type', 'Country', 'City', 'Stage', 'Curriculum', 'Source', 'Assigned', 'Added']
+const HEADERS = ['Name', 'Type', 'Country', 'Stage', 'Assigned', 'Added']
 
-export default function LeadsTable({ rows, selected, users, onSelect, onSelectAll, onRowClick, onEdit }: LeadsTableProps) {
+export default function LeadsTable({ rows, selected, users, isAdmin, onSelect, onSelectAll, onRowClick, onEdit }: LeadsTableProps) {
   const allSelected = selected.size === rows.length && rows.length > 0
 
   return (
@@ -45,13 +46,15 @@ export default function LeadsTable({ rows, selected, users, onSelect, onSelectAl
         <table className="min-w-full text-sm divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 w-8">
-                <input type="checkbox" checked={allSelected} onChange={onSelectAll} className="rounded" />
-              </th>
+              {isAdmin && (
+                <th className="px-4 py-3 w-8">
+                  <input type="checkbox" checked={allSelected} onChange={onSelectAll} className="rounded" />
+                </th>
+              )}
               {HEADERS.map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
               ))}
-              <th className="px-4 py-3 w-10" />
+              {isAdmin && <th className="px-4 py-3 w-10" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -61,23 +64,24 @@ export default function LeadsTable({ rows, selected, users, onSelect, onSelectAl
               const click = () => onRowClick(row.id)
               return (
                 <tr key={row.id} className={`hover:bg-[var(--color-brand-light)] transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={isSelected} onChange={() => onSelect(row.id)} className="rounded" />
-                  </td>
+                  {isAdmin && (
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={isSelected} onChange={() => onSelect(row.id)} className="rounded" />
+                    </td>
+                  )}
                   <td className="px-4 py-3 font-medium text-gray-900 cursor-pointer" onClick={click}>{row.name}</td>
                   <td className="px-4 py-3 cursor-pointer" onClick={click}><LeadTypeBadge type={row.lead_type} /></td>
                   <td className="px-4 py-3 text-gray-600 cursor-pointer" onClick={click}>{row.country}</td>
-                  <td className="px-4 py-3 text-gray-600 cursor-pointer" onClick={click}>{row.city ?? '—'}</td>
                   <td className="px-4 py-3 cursor-pointer" onClick={click}><StageBadge stage={row.stage} /></td>
-                  <td className="px-4 py-3 text-gray-600 cursor-pointer" onClick={click}>{formatCurriculum(row.curriculum)}</td>
-                  <td className="px-4 py-3 text-gray-600 cursor-pointer" onClick={click}>{row.source ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500 cursor-pointer" onClick={click}>{assignedUser?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500 cursor-pointer" onClick={click}>{formatDate(row.created_at)}</td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => onEdit(row)} className="text-slate-400 hover:text-[#2563EB] transition-colors" title="Edit lead">
-                      <EditIcon />
-                    </button>
-                  </td>
+                  {isAdmin && (
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => onEdit(row)} className="text-slate-400 hover:text-[#2563EB] transition-colors" title="Edit lead">
+                        <EditIcon />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               )
             })}

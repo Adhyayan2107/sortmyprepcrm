@@ -7,11 +7,6 @@ import { useUser } from '@/hooks/useUser'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import EmptyState from '@/components/ui/EmptyState'
 
-const ALL_COUNTRIES = [
-  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain',
-  'Oman', 'Jordan', 'Egypt', 'Lebanon',
-]
-
 const INPUT_CLS = 'border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[#2563EB]'
 
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (u: AppUser) => void }) {
@@ -97,24 +92,7 @@ export default function AdminUsersPage() {
   async function handleRoleChange(id: string, role: UserRole) {
     setSaving(id)
     const res = await updateUser(id, { role })
-    if (res.success) {
-      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)))
-    }
-    setSaving(null)
-  }
-
-  async function toggleCountry(user: AppUser, country: string) {
-    const current = user.countries ?? []
-    const updated = current.includes(country)
-      ? current.filter((c) => c !== country)
-      : [...current, country]
-    setSaving(user.id)
-    const res = await updateUser(user.id, { countries: updated })
-    if (res.success) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, countries: updated } : u))
-      )
-    }
+    if (res.success) setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)))
     setSaving(null)
   }
 
@@ -143,57 +121,31 @@ export default function AdminUsersPage() {
       {users.length === 0 ? (
         <EmptyState title="No users yet" description="Users appear here after their first login." />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {users.map((u) => (
-            <div key={u.id} className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900">{u.name ?? 'Unnamed'}</p>
-                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                      u.role === 'admin' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {u.role}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5">{u.id}</p>
-                </div>
-
+            <div key={u.id} className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+              <div>
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-500">Role:</label>
-                  <select
-                    value={u.role}
-                    disabled={saving === u.id}
-                    onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
-                    className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)] disabled:opacity-60"
-                  >
-                    <option value="rep">Rep</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <p className="font-semibold text-gray-900">{u.name ?? 'Unnamed'}</p>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                    u.role === 'admin' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {u.role}
+                  </span>
                 </div>
+                <p className="text-xs text-gray-400 mt-0.5">{u.id}</p>
               </div>
-
-              <div className="mt-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Assigned Countries</p>
-                <div className="flex flex-wrap gap-2">
-                  {ALL_COUNTRIES.map((country) => {
-                    const active = (u.countries ?? []).includes(country)
-                    return (
-                      <button
-                        key={country}
-                        disabled={saving === u.id}
-                        onClick={() => toggleCountry(u, country)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors disabled:opacity-60 ${
-                          active
-                            ? 'bg-[var(--color-brand-accent)] text-white border-[var(--color-brand-accent)]'
-                            : 'bg-white text-gray-600 border-gray-300 hover:border-[var(--color-brand-accent)]'
-                        }`}
-                      >
-                        {country}
-                      </button>
-                    )
-                  })}
-                </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-500">Role:</label>
+                <select
+                  value={u.role}
+                  disabled={saving === u.id}
+                  onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)] disabled:opacity-60"
+                >
+                  <option value="rep">Rep</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
             </div>
           ))}

@@ -134,7 +134,7 @@ function LeadsPageInner() {
         onSearch={setSearch} onStage={setStageFilter} onCountry={setCountryFilter} onAssigned={setAssignedFilter}
       />
 
-      {selected.size > 0 && (
+      {selected.size > 0 && currentUser?.role === 'admin' && (
         <BulkAssignBar
           selectedCount={selected.size}
           totalCount={filtered.length}
@@ -158,6 +158,7 @@ function LeadsPageInner() {
       ) : (
         <LeadsTable
           rows={filtered} selected={selected} users={users}
+          isAdmin={currentUser?.role === 'admin'}
           onSelect={toggleSelect} onSelectAll={toggleSelectAll}
           onRowClick={setSelectedId} onEdit={setEditRow}
         />

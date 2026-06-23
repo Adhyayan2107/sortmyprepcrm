@@ -23,6 +23,8 @@ export interface Lead {
   call_count: number
   message_count: number
   email_count: number
+  next_callback: string | null
+  next_action: string | null
   created_at: string
   last_activity: string
 }

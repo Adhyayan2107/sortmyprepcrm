@@ -129,6 +129,21 @@ export async function updateLeadDetails(
   return { success: true, data: data as Lead }
 }
 
+export async function saveCallOutcome(
+  id: string,
+  updates: { next_callback?: string | null; next_action?: string | null; stage?: string }
+): Promise<ServiceResult<Lead>> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(TABLES.LEADS)
+    .update({ ...updates, last_activity: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: data as Lead }
+}
+
 export async function deleteLead(id: string): Promise<ServiceResult<null>> {
   const supabase = createClient()
   const { error } = await supabase.from(TABLES.LEADS).delete().eq('id', id)

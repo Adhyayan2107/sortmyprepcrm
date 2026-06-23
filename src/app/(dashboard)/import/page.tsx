@@ -5,6 +5,7 @@ import { parseImportFile } from '@/utils/importParser'
 import { batchGeocode } from '@/utils/geocoder'
 import { bulkInsertLeads } from '@/services/leadService'
 import { LeadInsert } from '@/types/lead.types'
+import { LEAD_TYPES, LeadType } from '@/lib/constants'
 import ImportPreviewTable from '@/components/leads/ImportPreviewTable'
 
 type Step = 'upload' | 'preview' | 'done'
@@ -15,10 +16,18 @@ interface ImportSummary {
   errors: Array<{ row: number; reason: string }>
 }
 
+const TYPE_COLORS: Record<LeadType, string> = {
+  'School': 'bg-violet-100 text-violet-700 border-violet-200',
+  'Tuition Center': 'bg-amber-100 text-amber-700 border-amber-200',
+  'Personal Teacher': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+}
+
 export default function ImportPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState<Step>('upload')
   const [defaultCountry, setDefaultCountry] = useState('')
+  const [defaultLeadType, setDefaultLeadType] = useState<LeadType | ''>('')
+  const [sheetHasType, setSheetHasType] = useState<boolean | null>(null)
   const [leads, setLeads] = useState<LeadInsert[]>([])
   const [parseErrors, setParseErrors] = useState<Array<{ row: number; reason: string }>>([])
   const [summary, setSummary] = useState<ImportSummary | null>(null)
@@ -36,7 +45,12 @@ export default function ImportPage() {
 
     const parsed = await parseImportFile(file, {
       defaultCountry: defaultCountry.trim() || undefined,
+      defaultLeadType: defaultLeadType || null,
     })
+
+    // Detect if the sheet itself supplied lead_type on any row
+    const hasTypeFromSheet = parsed.valid.some((l) => l.lead_type != null)
+    setSheetHasType(hasTypeFromSheet)
 
     let finalLeads = parsed.valid
 
@@ -84,6 +98,7 @@ export default function ImportPage() {
     setImportError(null)
     setProcessingMsg(null)
     setGeocodeProgress(null)
+    setSheetHasType(null)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -120,6 +135,41 @@ export default function ImportPage() {
               onChange={e => setDefaultCountry(e.target.value)}
               className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]"
             />
+          </div>
+
+          {/* Default lead type */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              What type of leads are you importing?
+              <span className="font-normal text-gray-400 ml-1">(used when your sheet has no Lead Type column)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setDefaultLeadType('')}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  defaultLeadType === ''
+                    ? 'bg-slate-800 border-slate-800 text-white'
+                    : 'border-gray-300 text-gray-500 hover:border-gray-400'
+                }`}
+              >
+                Let sheet decide
+              </button>
+              {LEAD_TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setDefaultLeadType(t)}
+                  className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                    defaultLeadType === t
+                      ? TYPE_COLORS[t]
+                      : 'border-gray-300 text-gray-500 hover:border-gray-400'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* File picker */}
@@ -180,6 +230,7 @@ export default function ImportPage() {
               <div><span className="font-medium text-gray-700">email</span> — or "Centre / Admin Email"</div>
               <div><span className="font-medium text-gray-700">website</span></div>
               <div><span className="font-medium text-gray-700">status of lead</span> — maps to pipeline stage</div>
+              <div><span className="font-medium text-gray-700">lead type</span> — School / Tuition Center / Personal Teacher</div>
               <div><span className="font-medium text-gray-700">type</span> — saved in notes</div>
               <div><span className="font-medium text-gray-700">founder name / number / email / linkedin</span> — saved in notes</div>
               <div><span className="font-medium text-gray-700">number of teachers</span> — saved in notes</div>
@@ -195,6 +246,30 @@ export default function ImportPage() {
       {/* ── Preview ── */}
       {step === 'preview' && (
         <div className="space-y-6">
+          {/* Lead type detection banner */}
+          {sheetHasType ? (
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 text-sm text-emerald-700">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Lead types read from the sheet — each lead is tagged individually.
+            </div>
+          ) : defaultLeadType ? (
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm text-blue-700">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              All leads will be tagged as <strong className="ml-1">{defaultLeadType}</strong>.
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-sm text-amber-700">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              No Lead Type detected in sheet and no default selected — leads will be imported without a type tag.
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-gray-800">

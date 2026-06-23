@@ -129,6 +129,7 @@ export interface ParsedImportResult {
 
 export interface ImportOptions {
   defaultCountry?: string
+  defaultLeadType?: LeadType | null
 }
 
 export async function parseImportFile(
@@ -323,9 +324,9 @@ function transformRows(
     const message_count = parseInt(row._message_count ?? '0') || 0
     const email_count = parseInt(row._email_count ?? '0') || 0
 
-    // Resolve lead_type from type_col or category_of_lead
+    // Resolve lead_type: explicit column first, then fall back to import-page default
     const rawType = (row.type_col || row.category_of_lead || '').toLowerCase().trim()
-    const lead_type: LeadType | null = LEAD_TYPE_MAP[rawType] ?? null
+    const lead_type: LeadType | null = LEAD_TYPE_MAP[rawType] ?? options.defaultLeadType ?? null
 
     // Build structured notes from sheet-specific columns
     const noteParts: string[] = []

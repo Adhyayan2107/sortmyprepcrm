@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { CONTACT_TYPES } from '@/lib/constants'
 
-type NavChild = { label: string; href: string }
+type NavChild = { label: string; href: string; dot?: string }
 
 type NavItem = {
   href: string
@@ -17,7 +17,21 @@ type NavItem = {
 
 const ICON_CLS = 'w-[18px] h-[18px] shrink-0'
 
-const NAV_ITEMS: NavItem[] = [
+const ADMIN_LEADS_CHILDREN: NavChild[] = [
+  { label: 'All Leads',         href: '/leads' },
+  { label: 'Schools',           href: '/leads?type=School',           dot: 'bg-violet-500' },
+  { label: 'Tuition Centers',   href: '/leads?type=Tuition+Center',   dot: 'bg-amber-500' },
+  { label: 'Personal Teachers', href: '/leads?type=Personal+Teacher', dot: 'bg-emerald-500' },
+]
+
+const REP_LEADS_CHILDREN: NavChild[] = [
+  { label: 'My Leads',          href: '/leads?view=mine' },
+  { label: 'Schools',           href: '/leads?view=mine&type=School',           dot: 'bg-violet-500' },
+  { label: 'Tuition Centers',   href: '/leads?view=mine&type=Tuition+Center',   dot: 'bg-amber-500' },
+  { label: 'Personal Teachers', href: '/leads?view=mine&type=Personal+Teacher', dot: 'bg-emerald-500' },
+]
+
+const BASE_NAV: NavItem[] = [
   {
     href: '/', label: 'Map',
     icon: (
@@ -33,10 +47,6 @@ const NAV_ITEMS: NavItem[] = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    children: [
-      { label: 'All Leads', href: '/leads' },
-      { label: 'My Leads', href: '/leads?view=mine' },
-    ],
   },
   {
     href: '/scripts', label: 'Scripts',
@@ -99,12 +109,15 @@ function SidebarChildLinks({ children }: { children: NavChild[] }) {
           <Link
             key={child.href}
             href={child.href}
-            className={`block py-1 px-2 rounded text-[13px] transition-colors ${
+            className={`flex items-center gap-2 py-1 px-2 rounded text-[13px] transition-colors ${
               childActive
                 ? 'text-slate-900 bg-slate-100 font-medium'
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
+            {child.dot && (
+              <span className={`w-2 h-2 rounded-full shrink-0 ${child.dot}`} />
+            )}
             {child.label}
           </Link>
         )
@@ -116,8 +129,16 @@ function SidebarChildLinks({ children }: { children: NavChild[] }) {
 export default function Sidebar() {
   const pathname = usePathname()
   const { user } = useUser()
+  const isAdmin = user?.role === 'admin'
 
-  const items = user?.role === 'admin' ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS
+  const navItems: NavItem[] = BASE_NAV.map((item) => {
+    if (item.href === '/leads') {
+      return { ...item, children: isAdmin ? ADMIN_LEADS_CHILDREN : REP_LEADS_CHILDREN }
+    }
+    return item
+  })
+
+  if (isAdmin) navItems.push(ADMIN_ITEM)
 
   return (
     <aside className="hidden md:flex flex-col w-60 bg-white border-r border-slate-200 min-h-screen">
@@ -133,7 +154,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {items.map((item) => {
+        {navItems.map((item) => {
           const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
           return (
             <div key={item.href}>

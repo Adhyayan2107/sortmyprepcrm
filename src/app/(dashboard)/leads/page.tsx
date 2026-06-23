@@ -20,12 +20,28 @@ import LeadsTable from '@/components/leads/LeadsTable'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import EmptyState from '@/components/ui/EmptyState'
 
+function pageTitle(viewMine: boolean, typeFilter: string | null): string {
+  if (viewMine) {
+    if (typeFilter === 'School') return 'My Schools'
+    if (typeFilter === 'Tuition Center') return 'My Tuition Centers'
+    if (typeFilter === 'Personal Teacher') return 'My Personal Teachers'
+    return 'My Leads'
+  }
+  if (typeFilter === 'School') return 'Schools'
+  if (typeFilter === 'Tuition Center') return 'Tuition Centers'
+  if (typeFilter === 'Personal Teacher') return 'Personal Teachers'
+  return 'All Leads'
+}
+
 function LeadsPageInner() {
   const { rows, loading, error, refetch } = useLeadRows()
   const { user: currentUser } = useUser()
-  const [viewMode, setViewMode] = useState<'all' | 'mine'>('all')
-  const [categoryTab, setCategoryTab] = useState<'all' | 'school' | 'tuition'>('all')
-  const [tuitionSubTab, setTuitionSubTab] = useState<'all' | 'center' | 'teacher'>('all')
+  const searchParams = useSearchParams()
+
+  // Derived from URL — sidebar links drive these
+  const viewMine = searchParams.get('view') === 'mine'
+  const typeFilter = searchParams.get('type') as LeadType | null
+
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'All'>('All')
   const [countryFilter, setCountryFilter] = useState('')
@@ -40,17 +56,18 @@ function LeadsPageInner() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editRow, setEditRow] = useState<LeadListRow | null>(null)
 
-  const searchParams = useSearchParams()
-
   useEffect(() => {
     getAllUsers().then((res) => { if (res.success) setUsers(res.data) })
   }, [])
 
+  // Sync search query from URL (e.g. from map click-through)
   useEffect(() => {
-    if (searchParams.get('view') === 'mine') setViewMode('mine')
     const q = searchParams.get('search')
     if (q !== null) setSearch(q)
   }, [searchParams])
+
+  // Reset selection when URL-driven filters change
+  useEffect(() => { setSelected(new Set()) }, [viewMine, typeFilter])
 
   const countries = useMemo(
     () => [...new Set(rows.map((r) => r.country))].sort(),
@@ -62,17 +79,10 @@ function LeadsPageInner() {
     const matchStage = stageFilter === 'All' || r.stage === stageFilter
     const matchCountry = !countryFilter || r.country === countryFilter
     const matchAssigned = !assignedFilter || r.assigned_to === assignedFilter
-    const matchMine = viewMode === 'all' || r.assigned_to === currentUser?.id
-    let matchCategory = true
-    if (categoryTab === 'school') {
-      matchCategory = r.lead_type === 'School'
-    } else if (categoryTab === 'tuition') {
-      if (tuitionSubTab === 'center') matchCategory = r.lead_type === 'Tuition Center'
-      else if (tuitionSubTab === 'teacher') matchCategory = r.lead_type === 'Personal Teacher'
-      else matchCategory = r.lead_type === 'Tuition Center' || r.lead_type === 'Personal Teacher'
-    }
-    return matchSearch && matchStage && matchCountry && matchAssigned && matchMine && matchCategory
-  }), [rows, search, stageFilter, countryFilter, assignedFilter, viewMode, currentUser, categoryTab, tuitionSubTab])
+    const matchMine = !viewMine || r.assigned_to === currentUser?.id
+    const matchType = !typeFilter || r.lead_type === typeFilter
+    return matchSearch && matchStage && matchCountry && matchAssigned && matchMine && matchType
+  }), [rows, search, stageFilter, countryFilter, assignedFilter, viewMine, currentUser, typeFilter])
 
   function toggleSelect(id: string) {
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -107,76 +117,15 @@ function LeadsPageInner() {
     <div className="px-4 py-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-[var(--color-brand-primary)]">
-          {viewMode === 'mine'
-            ? 'My Leads'
-            : categoryTab === 'school'
-            ? 'Schools'
-            : categoryTab === 'tuition'
-            ? tuitionSubTab === 'center' ? 'Tuition Centers' : tuitionSubTab === 'teacher' ? 'Personal Teachers' : 'Tuition Leads'
-            : 'All Leads'}
+          {pageTitle(viewMine, typeFilter)}
           <span className="ml-2 text-base font-normal text-gray-400">({filtered.length})</span>
         </h1>
-        <div className="flex items-center gap-2">
-          {/* All / Mine toggle — mobile only (sidebar handles this on desktop) */}
-          <div className="md:hidden flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-            {(['all', 'mine'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setViewMode(m)}
-                className={`px-3 py-1.5 font-medium transition-colors ${viewMode === m ? 'bg-[#0F172A] text-white' : 'text-slate-500 hover:bg-slate-50'}`}
-              >
-                {m === 'all' ? 'All' : 'Mine'}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors"
-          >
-            + Add Lead
-          </button>
-        </div>
-      </div>
-
-      {/* Category tabs */}
-      <div className="mb-3">
-        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
-          {([['all', 'All Leads'], ['school', 'Schools'], ['tuition', 'Tuition']] as const).map(([val, label]) => (
-            <button
-              key={val}
-              type="button"
-              onClick={() => { setCategoryTab(val); setTuitionSubTab('all') }}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                categoryTab === val ? 'bg-white shadow-sm text-[#0F172A]' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {categoryTab === 'tuition' && (
-          <div className="flex gap-1 mt-2 ml-1">
-            {([['all', 'All Tuition'], ['center', 'Tuition Centers'], ['teacher', 'Personal Teachers']] as const).map(([val, label]) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => setTuitionSubTab(val)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors border ${
-                  tuitionSubTab === val
-                    ? val === 'center'
-                      ? 'bg-amber-500 border-amber-500 text-white'
-                      : val === 'teacher'
-                      ? 'bg-emerald-600 border-emerald-600 text-white'
-                      : 'bg-[#0F172A] border-[#0F172A] text-white'
-                    : 'border-slate-200 text-slate-500 hover:border-slate-400 bg-white'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors"
+        >
+          + Add Lead
+        </button>
       </div>
 
       <LeadsFilterBar

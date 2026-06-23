@@ -31,8 +31,12 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
 
+  // Build redirectTo from the request origin so it always matches where the app is actually running
+  const origin = req.headers.get('origin') ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const redirectTo = `${origin}/auth/callback`
+
   // Send a Supabase magic-link invite email
-  const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email)
+  const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo })
   if (inviteError) {
     return NextResponse.json({ error: inviteError.message }, { status: 400 })
   }

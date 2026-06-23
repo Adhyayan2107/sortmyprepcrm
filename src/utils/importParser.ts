@@ -54,6 +54,9 @@ const COL_ALIAS: Record<string, string> = {
   // curriculum
   curriculum: 'curriculum',
 
+  // lead type (new explicit column)
+  'lead type': 'type_col',
+
   // source
   source: 'source',
   'lead source': 'source',

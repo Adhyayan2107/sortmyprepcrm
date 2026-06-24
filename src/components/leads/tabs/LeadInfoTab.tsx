@@ -14,6 +14,7 @@ interface Props {
   isAdmin?: boolean
   lastCallNote?: string | null
   lastCallAt?: string | null
+  lastCallOutcome?: string | null
   onStageChange: (stage: PipelineStage) => void
   onAssignmentChange: (userId: string) => void
   onCountChange?: (field: 'call_count' | 'message_count' | 'email_count', delta: 1 | -1) => void
@@ -29,8 +30,11 @@ function isOverdue(raw: string): boolean {
   return new Date(raw + 'T00:00:00') < new Date()
 }
 
-function CallRecapCard({ lead, lastCallNote, lastCallAt }: { lead: Lead; lastCallNote?: string | null; lastCallAt?: string | null }) {
+function CallRecapCard({ lead, lastCallNote, lastCallAt, lastCallOutcome }: { lead: Lead; lastCallNote?: string | null; lastCallAt?: string | null; lastCallOutcome?: string | null }) {
   const pointers = (lead.next_action ?? '').split('\n').filter((l) => l.trim())
+
+  const parsedOutcome = lastCallOutcome ? (() => { try { return JSON.parse(lastCallOutcome) } catch { return null } })() : null
+  const effectiveCallback = lead.next_callback || parsedOutcome?.next_callback || null
 
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50 overflow-hidden">
@@ -50,27 +54,27 @@ function CallRecapCard({ lead, lastCallNote, lastCallAt }: { lead: Lead; lastCal
       <div className="px-3 py-2.5 space-y-3">
         {/* Next call date — always visible for every lead */}
         <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 ${
-          !lead.next_callback
+          !effectiveCallback
             ? 'bg-slate-50 border border-slate-200'
-            : isOverdue(lead.next_callback)
+            : isOverdue(effectiveCallback)
             ? 'bg-red-50 border border-red-200'
             : 'bg-amber-50 border border-amber-200'
         }`}>
           <svg className={`w-3.5 h-3.5 shrink-0 ${
-            !lead.next_callback ? 'text-slate-400' : isOverdue(lead.next_callback) ? 'text-red-500' : 'text-amber-500'
+            !effectiveCallback ? 'text-slate-400' : isOverdue(effectiveCallback) ? 'text-red-500' : 'text-amber-500'
           }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <div>
             <p className={`text-[10px] font-semibold uppercase ${
-              !lead.next_callback ? 'text-slate-400' : isOverdue(lead.next_callback) ? 'text-red-500' : 'text-amber-500'
+              !effectiveCallback ? 'text-slate-400' : isOverdue(effectiveCallback) ? 'text-red-500' : 'text-amber-500'
             }`}>
-              {!lead.next_callback ? 'Next Call' : isOverdue(lead.next_callback) ? 'Overdue Callback' : 'Next Call'}
+              {!effectiveCallback ? 'Next Call' : isOverdue(effectiveCallback) ? 'Overdue Callback' : 'Next Call'}
             </p>
             <p className={`text-xs font-bold ${
-              !lead.next_callback ? 'text-slate-400' : isOverdue(lead.next_callback) ? 'text-red-700' : 'text-amber-700'
+              !effectiveCallback ? 'text-slate-400' : isOverdue(effectiveCallback) ? 'text-red-700' : 'text-amber-700'
             }`}>
-              {lead.next_callback ? formatCallbackDate(lead.next_callback) : 'Not scheduled'}
+              {effectiveCallback ? formatCallbackDate(effectiveCallback) : 'Not scheduled'}
             </p>
           </div>
         </div>
@@ -173,12 +177,12 @@ function parseImportedNotes(notes: string | null) {
   return { founderRows, freeText: freeLines.length ? freeLines.join('\n') : null }
 }
 
-export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, onStageChange, onAssignmentChange, onCountChange, onViewScripts }: Props) {
+export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, lastCallOutcome, onStageChange, onAssignmentChange, onCountChange, onViewScripts }: Props) {
   const { founderRows, freeText } = parseImportedNotes(lead.notes)
 
   return (
     <div className="px-5 py-4 space-y-5">
-      <CallRecapCard lead={lead} lastCallNote={lastCallNote} lastCallAt={lastCallAt} />
+      <CallRecapCard lead={lead} lastCallNote={lastCallNote} lastCallAt={lastCallAt} lastCallOutcome={lastCallOutcome} />
 
       <div className="space-y-1">
         {lead.lead_type && (

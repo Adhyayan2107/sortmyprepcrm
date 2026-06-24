@@ -209,6 +209,8 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
             teamUsers={teamUsers}
             saving={saving}
             isAdmin={currentUser?.role === 'admin'}
+            lastCallNote={activity.find((a) => a.type === 'call')?.summary ?? null}
+            lastCallAt={activity.find((a) => a.type === 'call')?.created_at ?? null}
             onStageChange={handleStageChange}
             onAssignmentChange={handleAssignmentChange}
             onCountChange={handleCountChange}

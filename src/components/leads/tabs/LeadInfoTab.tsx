@@ -12,10 +12,71 @@ interface Props {
   teamUsers: AppUser[]
   saving: boolean
   isAdmin?: boolean
+  lastCallNote?: string | null
+  lastCallAt?: string | null
   onStageChange: (stage: PipelineStage) => void
   onAssignmentChange: (userId: string) => void
   onCountChange?: (field: 'call_count' | 'message_count' | 'email_count', delta: 1 | -1) => void
   onViewScripts?: () => void
+}
+
+function CallRecapCard({ lead, lastCallNote, lastCallAt }: { lead: Lead; lastCallNote?: string | null; lastCallAt?: string | null }) {
+  const pointers = (lead.next_action ?? '').split('\n').filter((l) => l.trim())
+  const hasAnything = lastCallNote || pointers.length > 0 || lead.next_callback
+
+  if (!hasAnything) return null
+
+  return (
+    <div className="rounded-xl border border-blue-100 bg-blue-50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-blue-100/60">
+        <div className="flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          <span className="text-xs font-semibold text-blue-700">Last Call Recap</span>
+        </div>
+        {lastCallAt && (
+          <span className="text-[11px] text-blue-500">{formatDate(lastCallAt)}</span>
+        )}
+      </div>
+
+      <div className="px-3 py-2.5 space-y-2.5">
+        {/* Call notes */}
+        {lastCallNote && (
+          <div>
+            <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1">What Happened</p>
+            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{lastCallNote}</p>
+          </div>
+        )}
+
+        {/* Next action pointers */}
+        {pointers.length > 0 && (
+          <div>
+            <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1">Next Actions</p>
+            <ol className="space-y-0.5">
+              {pointers.map((p, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
+                  <span className="text-blue-400 font-semibold shrink-0 mt-px">{i + 1}.</span>
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {/* Next callback */}
+        {lead.next_callback && (
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-xs font-semibold text-amber-600">Call back: {lead.next_callback}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function CounterRow({
@@ -87,11 +148,13 @@ function parseImportedNotes(notes: string | null) {
   return { founderRows, freeText: freeLines.length ? freeLines.join('\n') : null }
 }
 
-export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, onStageChange, onAssignmentChange, onCountChange, onViewScripts }: Props) {
+export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, onStageChange, onAssignmentChange, onCountChange, onViewScripts }: Props) {
   const { founderRows, freeText } = parseImportedNotes(lead.notes)
 
   return (
     <div className="px-5 py-4 space-y-5">
+      <CallRecapCard lead={lead} lastCallNote={lastCallNote} lastCallAt={lastCallAt} />
+
       <div className="space-y-1">
         {lead.lead_type && (
           <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-1 ${

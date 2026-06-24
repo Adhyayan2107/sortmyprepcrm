@@ -249,6 +249,9 @@ export default function CallPage() {
     if (newStage && newStage !== lead.stage) {
       setLead((prev) => prev ? { ...prev, stage: newStage as PipelineStage } : prev)
     }
+
+    // Invalidate Next.js router cache so leads page shows updated stage on next visit
+    router.refresh()
   }
 
   function goNext() {

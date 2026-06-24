@@ -237,10 +237,15 @@ export default function CallPage() {
 
     await saveCallOutcome(lead.id, updates)
 
-    await logCall(lead.id, callNotes.trim(), user.id, nextAction, nextCallback || null)
-    if (callNotes.trim()) {
-      await incrementLeadCount(lead.id, 'call_count', 1)
-    }
+    // Generate a default note when the rep didn't write anything
+    const callbackFormatted = nextCallback
+      ? new Date(nextCallback + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : null
+    const effectiveNotes = callNotes.trim()
+      || (callbackFormatted ? `Call done. Next call on ${callbackFormatted}.` : 'Call done.')
+
+    await logCall(lead.id, effectiveNotes, user.id, nextAction, nextCallback || null)
+    await incrementLeadCount(lead.id, 'call_count', 1)
 
     setSaving(false)
     setSaved(true)

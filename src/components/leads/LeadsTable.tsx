@@ -22,6 +22,9 @@ interface LeadsTableProps {
   selected: Set<string>
   users: AppUser[]
   isAdmin?: boolean
+  sortKey?: string | null
+  sortDir?: 'asc' | 'desc'
+  onSort?: (key: string) => void
   onSelect: (id: string) => void
   onSelectAll: () => void
   onRowClick: (id: string) => void
@@ -37,7 +40,7 @@ const EditIcon = () => (
 
 const HEADERS = ['Name', 'Type', 'Country', 'Stage', 'Assigned', 'Added']
 
-export default function LeadsTable({ rows, selected, users, isAdmin, onSelect, onSelectAll, onRowClick, onEdit }: LeadsTableProps) {
+export default function LeadsTable({ rows, selected, users, isAdmin, sortKey, sortDir, onSort, onSelect, onSelectAll, onRowClick, onEdit }: LeadsTableProps) {
   const allSelected = selected.size === rows.length && rows.length > 0
 
   return (
@@ -52,7 +55,17 @@ export default function LeadsTable({ rows, selected, users, isAdmin, onSelect, o
                 </th>
               )}
               {HEADERS.map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <button
+                    onClick={() => onSort?.(h)}
+                    className="flex items-center gap-1 hover:text-gray-800 transition-colors group"
+                  >
+                    {h}
+                    <span className={`transition-colors ${sortKey === h ? 'text-[#2563EB]' : 'text-gray-300 group-hover:text-gray-400'}`}>
+                      {sortKey === h ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                    </span>
+                  </button>
+                </th>
               ))}
               {isAdmin && <th className="px-4 py-3 w-10" />}
             </tr>

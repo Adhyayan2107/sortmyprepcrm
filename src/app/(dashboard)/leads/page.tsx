@@ -46,6 +46,8 @@ function LeadsPageInner() {
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'All'>('All')
   const [countryFilter, setCountryFilter] = useState('')
   const [assignedFilter, setAssignedFilter] = useState('')
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [users, setUsers] = useState<AppUser[]>([])
@@ -83,6 +85,35 @@ function LeadsPageInner() {
     const matchType = !typeFilter || r.lead_type === typeFilter
     return matchSearch && matchStage && matchCountry && matchAssigned && matchMine && matchType
   }), [rows, search, stageFilter, countryFilter, assignedFilter, viewMine, currentUser, typeFilter])
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered
+    return [...filtered].sort((a, b) => {
+      let aVal: string = ''
+      let bVal: string = ''
+      if (sortKey === 'Name') { aVal = a.name; bVal = b.name }
+      else if (sortKey === 'Type') { aVal = a.lead_type ?? ''; bVal = b.lead_type ?? '' }
+      else if (sortKey === 'Country') { aVal = a.country; bVal = b.country }
+      else if (sortKey === 'Stage') { aVal = a.stage; bVal = b.stage }
+      else if (sortKey === 'Assigned') {
+        aVal = users.find((u) => u.id === a.assigned_to)?.name ?? ''
+        bVal = users.find((u) => u.id === b.assigned_to)?.name ?? ''
+      }
+      else if (sortKey === 'Added') { aVal = a.created_at; bVal = b.created_at }
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [filtered, sortKey, sortDir, users])
+
+  function handleSort(key: string) {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
 
   function toggleSelect(id: string) {
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -157,8 +188,9 @@ function LeadsPageInner() {
         />
       ) : (
         <LeadsTable
-          rows={filtered} selected={selected} users={users}
+          rows={sorted} selected={selected} users={users}
           isAdmin={currentUser?.role === 'admin'}
+          sortKey={sortKey} sortDir={sortDir} onSort={handleSort}
           onSelect={toggleSelect} onSelectAll={toggleSelectAll}
           onRowClick={setSelectedId} onEdit={setEditRow}
         />

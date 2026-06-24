@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
@@ -126,10 +126,41 @@ function SidebarChildLinks({ children }: { children: NavChild[] }) {
   )
 }
 
+const CollapseIcon = ({ collapsed }: { collapsed: boolean }) => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {collapsed ? (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+    ) : (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+    )}
+  </svg>
+)
+
+const ImportIcon = () => (
+  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+  </svg>
+)
+
 export default function Sidebar() {
   const pathname = usePathname()
   const { user } = useUser()
   const isAdmin = user?.role === 'admin'
+
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('sidebar-collapsed')
+    if (stored === 'true') setCollapsed(true)
+  }, [])
+
+  function toggleCollapse() {
+    setCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem('sidebar-collapsed', String(next))
+      return next
+    })
+  }
 
   const navItems: NavItem[] = BASE_NAV.map((item) => {
     if (item.href === '/leads') {
@@ -141,37 +172,51 @@ export default function Sidebar() {
   if (isAdmin) navItems.push(ADMIN_ITEM)
 
   return (
-    <aside className="hidden md:flex flex-col w-60 bg-white border-r border-slate-200 min-h-screen">
-      {/* Logo */}
-      <div className="px-4 h-14 flex items-center border-b border-slate-200">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm">
+    <aside
+      className={`hidden md:flex flex-col bg-white border-r border-slate-200 min-h-screen transition-all duration-200 ${
+        collapsed ? 'w-14' : 'w-60'
+      }`}
+    >
+      {/* Logo + collapse toggle */}
+      <div className="px-3 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm shrink-0">
             <span className="text-white text-[11px] font-bold tracking-tight">SP</span>
           </div>
-          <span className="text-[14px] font-semibold text-slate-900 tracking-tight">sortmyprepCRM</span>
+          {!collapsed && (
+            <span className="text-[14px] font-semibold text-slate-900 tracking-tight truncate">sortmyprepCRM</span>
+          )}
         </div>
+        <button
+          onClick={toggleCollapse}
+          className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 p-0.5 rounded"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <CollapseIcon collapsed={collapsed} />
+        </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => {
           const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
           return (
             <div key={item.href}>
               <Link
                 href={item.href}
+                title={collapsed ? item.label : undefined}
                 className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] font-medium transition-colors ${
                   active
                     ? 'bg-slate-100 text-slate-900'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                } ${collapsed ? 'justify-center px-0' : ''}`}
               >
-                <span className={active ? 'text-[#2563EB]' : 'text-slate-400 group-hover:text-slate-500'}>
+                <span className={`shrink-0 ${active ? 'text-[#2563EB]' : 'text-slate-400 group-hover:text-slate-500'}`}>
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                {!collapsed && <span>{item.label}</span>}
               </Link>
-              {active && item.children && (
+              {!collapsed && active && item.children && (
                 <Suspense fallback={null}>
                   <SidebarChildLinks children={item.children} />
                 </Suspense>
@@ -185,29 +230,33 @@ export default function Sidebar() {
       <div className="px-2 pb-2">
         <Link
           href="/import"
+          title={collapsed ? 'Import Leads' : undefined}
           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium border transition-colors ${
             pathname === '/import'
               ? 'bg-[#2563EB] text-white border-[#2563EB]'
               : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-          }`}
+          } ${collapsed ? 'justify-center px-0 border-0' : ''}`}
         >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          Import Leads
+          <ImportIcon />
+          {!collapsed && 'Import Leads'}
         </Link>
       </div>
 
       {/* Footer — user identity strip */}
       {user && (
-        <div className="px-3 py-3 border-t border-slate-200 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+        <div className={`px-3 py-3 border-t border-slate-200 flex items-center gap-2.5 ${collapsed ? 'justify-center px-2' : ''}`}>
+          <div
+            className="w-7 h-7 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0"
+            title={collapsed ? (user.name ?? 'User') : undefined}
+          >
             {(user.name ?? 'U').split(' ').map((p) => p[0] ?? '').slice(0, 2).join('').toUpperCase()}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12.5px] font-medium text-slate-900 truncate">{user.name ?? 'User'}</p>
-            <p className="text-[11px] text-slate-400 truncate capitalize">{user.role ?? 'rep'}</p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-medium text-slate-900 truncate">{user.name ?? 'User'}</p>
+              <p className="text-[11px] text-slate-400 truncate capitalize">{user.role ?? 'rep'}</p>
+            </div>
+          )}
         </div>
       )}
     </aside>

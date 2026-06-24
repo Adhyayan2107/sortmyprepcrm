@@ -49,12 +49,19 @@ export async function addNote(
 export async function logCall(
   leadId: string,
   notes: string,
-  doneBy: string
+  doneBy: string,
+  nextActions?: string | null,
+  nextCallback?: string | null
 ): Promise<ServiceResult<ActivityLog>> {
   const supabase = createClient()
+
+  const outcome = (nextActions || nextCallback)
+    ? JSON.stringify({ next_actions: nextActions ?? null, next_callback: nextCallback ?? null })
+    : null
+
   const { data, error } = await supabase
     .from(TABLES.ACTIVITY_LOG)
-    .insert({ lead_id: leadId, type: 'call', summary: notes, done_by: doneBy })
+    .insert({ lead_id: leadId, type: 'call', summary: notes || null, outcome, done_by: doneBy })
     .select()
     .single()
 

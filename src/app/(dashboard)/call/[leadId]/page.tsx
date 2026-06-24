@@ -121,10 +121,10 @@ export default function CallPage() {
     })
   }, [])
 
-  // Once allScripts is loaded and a lead has no assigned script, auto-select the top script for its type
+  // Once allScripts is loaded and a lead has no assigned script, auto-select + persist the top script for its type
   useEffect(() => {
-    if (!noScriptAssigned || allScripts.length === 0 || script) return
-    const contactType = lead?.lead_type ? LEAD_TYPE_TO_CONTACT_TYPE[lead.lead_type] : undefined
+    if (!noScriptAssigned || allScripts.length === 0 || script || !lead || !user) return
+    const contactType = lead.lead_type ? LEAD_TYPE_TO_CONTACT_TYPE[lead.lead_type] : undefined
     const defaultScript =
       allScripts.find((s) => s.contact_type === contactType) ??
       allScripts[0] ??
@@ -132,10 +132,12 @@ export default function CallPage() {
     if (defaultScript) {
       setScript(defaultScript)
       setNoScriptAssigned(false)
+      // Persist so the picker never appears again for this lead
+      assignScriptToLead(defaultScript.id, lead.id, user.id)
     } else {
       setShowScriptPicker(true)
     }
-  }, [noScriptAssigned, allScripts, script, lead])
+  }, [noScriptAssigned, allScripts, script, lead, user])
 
   const loadLead = useCallback(async (id: string) => {
     setLoading(true)
@@ -226,8 +228,8 @@ export default function CallPage() {
 
     await saveCallOutcome(lead.id, updates)
 
+    await logCall(lead.id, callNotes.trim(), user.id, nextAction, nextCallback || null)
     if (callNotes.trim()) {
-      await logCall(lead.id, callNotes.trim(), user.id)
       await incrementLeadCount(lead.id, 'call_count', 1)
     }
 

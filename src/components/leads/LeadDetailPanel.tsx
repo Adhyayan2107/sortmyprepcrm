@@ -234,6 +234,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
         ) : (
           <LeadActivityTab
             activity={activity}
+            users={teamUsers}
             noteText={noteText}
             addingNote={addingNote}
             onNoteChange={setNoteText}

@@ -20,58 +20,80 @@ interface Props {
   onViewScripts?: () => void
 }
 
+function formatCallbackDate(raw: string): string {
+  const d = new Date(raw + 'T00:00:00')
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function isOverdue(raw: string): boolean {
+  return new Date(raw + 'T00:00:00') < new Date()
+}
+
 function CallRecapCard({ lead, lastCallNote, lastCallAt }: { lead: Lead; lastCallNote?: string | null; lastCallAt?: string | null }) {
   const pointers = (lead.next_action ?? '').split('\n').filter((l) => l.trim())
-  const hasAnything = lastCallNote || pointers.length > 0 || lead.next_callback
-
-  if (!hasAnything) return null
+  const hasCallData = lastCallNote || pointers.length > 0 || lead.next_callback
 
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-blue-100/60">
+      <div className="flex items-center justify-between px-3 py-2 bg-blue-100/70">
         <div className="flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
-          <span className="text-xs font-semibold text-blue-700">Last Call Recap</span>
+          <span className="text-xs font-bold text-blue-700">Last Call Recap</span>
         </div>
         {lastCallAt && (
           <span className="text-[11px] text-blue-500">{formatDate(lastCallAt)}</span>
         )}
       </div>
 
-      <div className="px-3 py-2.5 space-y-2.5">
-        {/* Call notes */}
-        {lastCallNote && (
-          <div>
-            <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1">What Happened</p>
-            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{lastCallNote}</p>
+      <div className="px-3 py-2.5 space-y-3">
+        {!hasCallData && (
+          <p className="text-xs text-slate-400 italic">No call has been logged yet.</p>
+        )}
+
+        {/* Next callback — most urgent, show first */}
+        {lead.next_callback && (
+          <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 ${
+            isOverdue(lead.next_callback)
+              ? 'bg-red-50 border border-red-200'
+              : 'bg-amber-50 border border-amber-200'
+          }`}>
+            <svg className={`w-3.5 h-3.5 shrink-0 ${isOverdue(lead.next_callback) ? 'text-red-500' : 'text-amber-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <div>
+              <p className={`text-[10px] font-semibold uppercase ${isOverdue(lead.next_callback) ? 'text-red-500' : 'text-amber-500'}`}>
+                {isOverdue(lead.next_callback) ? 'Overdue Callback' : 'Next Callback'}
+              </p>
+              <p className={`text-xs font-bold ${isOverdue(lead.next_callback) ? 'text-red-700' : 'text-amber-700'}`}>
+                {formatCallbackDate(lead.next_callback)}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Next action pointers */}
         {pointers.length > 0 && (
           <div>
-            <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1">Next Actions</p>
-            <ol className="space-y-0.5">
+            <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1.5">To-Dos</p>
+            <ol className="space-y-1">
               {pointers.map((p, i) => (
                 <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
-                  <span className="text-blue-400 font-semibold shrink-0 mt-px">{i + 1}.</span>
-                  <span>{p}</span>
+                  <span className="text-blue-400 font-bold shrink-0 mt-px">{i + 1}.</span>
+                  <span className="leading-relaxed">{p}</span>
                 </li>
               ))}
             </ol>
           </div>
         )}
 
-        {/* Next callback */}
-        {lead.next_callback && (
-          <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-xs font-semibold text-amber-600">Call back: {lead.next_callback}</span>
+        {/* Last call notes */}
+        {lastCallNote && (
+          <div>
+            <p className="text-[10px] font-semibold text-blue-600 uppercase mb-1">What Happened</p>
+            <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line line-clamp-4">{lastCallNote}</p>
           </div>
         )}
       </div>

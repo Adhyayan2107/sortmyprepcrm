@@ -129,20 +129,28 @@ export default function CallPage() {
       allScripts.find((s) => s.contact_type === contactType) ??
       allScripts[0] ??
       null
-    if (defaultScript) {
-      setScript(defaultScript)
-      setNoScriptAssigned(false)
-      // Persist so the picker never appears again for this lead
-      assignScriptToLead(defaultScript.id, lead.id, user.id)
-    } else {
+    if (!defaultScript) {
+      // Only show picker when there are truly no scripts to fall back on
       setShowScriptPicker(true)
+      return
     }
+    setScript(defaultScript)
+    setNoScriptAssigned(false)
+    setShowScriptPicker(false)
+    // Persist immediately so detail panel Script tab reflects this choice
+    const { id: scriptId, ..._ } = defaultScript
+    const leadId = lead.id
+    const userId = user.id
+    assignScriptToLead(scriptId, leadId, userId)
   }, [noScriptAssigned, allScripts, script, lead, user])
 
   const loadLead = useCallback(async (id: string) => {
     setLoading(true)
     setSaved(false)
     setCallNotes('')
+    // Reset picker and script state so prev/next never carries over stale state
+    setScript(null)
+    setShowScriptPicker(false)
     setNoScriptAssigned(false)
 
     const [leadRes, assignedRes] = await Promise.all([
@@ -161,10 +169,11 @@ export default function CallPage() {
     if (assignedRes.success && assignedRes.data) {
       setScript(assignedRes.data.script)
       setNoScriptAssigned(false)
+      setShowScriptPicker(false)
     } else {
       setScript(null)
       setNoScriptAssigned(true)
-      setShowScriptPicker(true)
+      // Don't open picker here — let the auto-select useEffect run first
     }
 
     setLoading(false)

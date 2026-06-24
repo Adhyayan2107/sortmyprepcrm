@@ -12,12 +12,20 @@ import { getLeadAssignedScript, getScriptsByContactType, assignScriptToLead } fr
 import { logCall, logStageChange } from '@/services/activityService'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import StageBadge from '@/components/ui/StageBadge'
-import { LeadType } from '@/lib/constants'
 
-const TYPE_BADGE: Record<LeadType, string> = {
+const TYPE_BADGE: Record<string, string> = {
   School: 'bg-violet-100 text-violet-700',
   'Tuition Center': 'bg-amber-100 text-amber-700',
+  'Private Teacher': 'bg-emerald-100 text-emerald-700',
   'Personal Teacher': 'bg-emerald-100 text-emerald-700',
+}
+
+// Maps LeadType → CONTACT_TYPES key for default script selection
+const LEAD_TYPE_TO_CONTACT_TYPE: Record<string, string> = {
+  School: 'School',
+  'Tuition Center': 'Coaching Center',
+  'Private Teacher': 'Private Teacher',
+  'Personal Teacher': 'Private Teacher',
 }
 
 function parsePointers(raw: string | null): string[] {
@@ -106,12 +114,28 @@ export default function CallPage() {
   // Script tab
   const [scriptTab, setScriptTab] = useState<'script' | 'notes'>('script')
 
-  // Load all scripts once for the picker
+  // Load all scripts once (for picker + auto-default)
   useEffect(() => {
     Promise.all(CONTACT_TYPES.map((t) => getScriptsByContactType(t))).then((results) => {
       setAllScripts(results.flatMap((r) => (r.success ? r.data : [])))
     })
   }, [])
+
+  // Once allScripts is loaded and a lead has no assigned script, auto-select the top script for its type
+  useEffect(() => {
+    if (!noScriptAssigned || allScripts.length === 0 || script) return
+    const contactType = lead?.lead_type ? LEAD_TYPE_TO_CONTACT_TYPE[lead.lead_type] : undefined
+    const defaultScript =
+      allScripts.find((s) => s.contact_type === contactType) ??
+      allScripts[0] ??
+      null
+    if (defaultScript) {
+      setScript(defaultScript)
+      setNoScriptAssigned(false)
+    } else {
+      setShowScriptPicker(true)
+    }
+  }, [noScriptAssigned, allScripts, script, lead])
 
   const loadLead = useCallback(async (id: string) => {
     setLoading(true)

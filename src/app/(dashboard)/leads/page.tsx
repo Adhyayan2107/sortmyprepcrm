@@ -24,12 +24,12 @@ function pageTitle(viewMine: boolean, typeFilter: string | null): string {
   if (viewMine) {
     if (typeFilter === 'School') return 'My Schools'
     if (typeFilter === 'Tuition Center') return 'My Tuition Centers'
-    if (typeFilter === 'Personal Teacher') return 'My Personal Teachers'
+    if (typeFilter === 'Private Teacher') return 'My Private Teachers'
     return 'My Leads'
   }
   if (typeFilter === 'School') return 'Schools'
   if (typeFilter === 'Tuition Center') return 'Tuition Centers'
-  if (typeFilter === 'Personal Teacher') return 'Personal Teachers'
+  if (typeFilter === 'Private Teacher') return 'Private Teachers'
   return 'All Leads'
 }
 

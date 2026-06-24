@@ -5,9 +5,10 @@ interface ImportPreviewTableProps {
   leads: LeadInsert[]
 }
 
-const TYPE_BADGE: Record<LeadType, string> = {
+const TYPE_BADGE: Record<string, string> = {
   'School': 'bg-violet-100 text-violet-700',
   'Tuition Center': 'bg-amber-100 text-amber-700',
+  'Private Teacher': 'bg-emerald-100 text-emerald-700',
   'Personal Teacher': 'bg-emerald-100 text-emerald-700',
 }
 

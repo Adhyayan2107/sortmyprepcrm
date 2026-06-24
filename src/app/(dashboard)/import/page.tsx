@@ -19,7 +19,7 @@ interface ImportSummary {
 const TYPE_COLORS: Record<LeadType, string> = {
   'School': 'bg-violet-100 text-violet-700 border-violet-200',
   'Tuition Center': 'bg-amber-100 text-amber-700 border-amber-200',
-  'Personal Teacher': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'Private Teacher': 'bg-emerald-100 text-emerald-700 border-emerald-200',
 }
 
 export default function ImportPage() {
@@ -230,7 +230,7 @@ export default function ImportPage() {
               <div><span className="font-medium text-gray-700">email</span> — or "Centre / Admin Email"</div>
               <div><span className="font-medium text-gray-700">website</span></div>
               <div><span className="font-medium text-gray-700">status of lead</span> — maps to pipeline stage</div>
-              <div><span className="font-medium text-gray-700">lead type</span> — School / Tuition Center / Personal Teacher</div>
+              <div><span className="font-medium text-gray-700">lead type</span> — School / Tuition Center / Private Teacher</div>
               <div><span className="font-medium text-gray-700">type</span> — saved in notes</div>
               <div><span className="font-medium text-gray-700">founder name / number / email / linkedin</span> — saved in notes</div>
               <div><span className="font-medium text-gray-700">number of teachers</span> — saved in notes</div>

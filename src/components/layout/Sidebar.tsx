@@ -21,14 +21,14 @@ const ADMIN_LEADS_CHILDREN: NavChild[] = [
   { label: 'All Leads',         href: '/leads' },
   { label: 'Schools',           href: '/leads?type=School',           dot: 'bg-violet-500' },
   { label: 'Tuition Centers',   href: '/leads?type=Tuition+Center',   dot: 'bg-amber-500' },
-  { label: 'Personal Teachers', href: '/leads?type=Personal+Teacher', dot: 'bg-emerald-500' },
+  { label: 'Private Teachers',  href: '/leads?type=Private+Teacher',  dot: 'bg-emerald-500' },
 ]
 
 const REP_LEADS_CHILDREN: NavChild[] = [
   { label: 'My Leads',          href: '/leads?view=mine' },
   { label: 'Schools',           href: '/leads?view=mine&type=School',           dot: 'bg-violet-500' },
   { label: 'Tuition Centers',   href: '/leads?view=mine&type=Tuition+Center',   dot: 'bg-amber-500' },
-  { label: 'Personal Teachers', href: '/leads?view=mine&type=Personal+Teacher', dot: 'bg-emerald-500' },
+  { label: 'Private Teachers',  href: '/leads?view=mine&type=Private+Teacher',  dot: 'bg-emerald-500' },
 ]
 
 const BASE_NAV: NavItem[] = [
@@ -164,7 +164,11 @@ export default function Sidebar() {
 
   const navItems: NavItem[] = BASE_NAV.map((item) => {
     if (item.href === '/leads') {
-      return { ...item, children: isAdmin ? ADMIN_LEADS_CHILDREN : REP_LEADS_CHILDREN }
+      return {
+        ...item,
+        href: isAdmin ? '/leads' : '/leads?view=mine',
+        children: isAdmin ? ADMIN_LEADS_CHILDREN : REP_LEADS_CHILDREN,
+      }
     }
     return item
   })
@@ -178,28 +182,42 @@ export default function Sidebar() {
       }`}
     >
       {/* Logo + collapse toggle */}
-      <div className="px-3 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm shrink-0">
+      {collapsed ? (
+        <div className="h-14 flex flex-col items-center justify-center gap-1.5 border-b border-slate-200 shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm">
             <span className="text-white text-[11px] font-bold tracking-tight">SP</span>
           </div>
-          {!collapsed && (
-            <span className="text-[14px] font-semibold text-slate-900 tracking-tight truncate">sortmyprepCRM</span>
-          )}
+          <button
+            onClick={toggleCollapse}
+            className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
+            title="Expand sidebar"
+          >
+            <CollapseIcon collapsed={collapsed} />
+          </button>
         </div>
-        <button
-          onClick={toggleCollapse}
-          className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 p-0.5 rounded"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <CollapseIcon collapsed={collapsed} />
-        </button>
-      </div>
+      ) : (
+        <div className="px-3 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm shrink-0">
+              <span className="text-white text-[11px] font-bold tracking-tight">SP</span>
+            </div>
+            <span className="text-[14px] font-semibold text-slate-900 tracking-tight truncate">sortmyprepCRM</span>
+          </div>
+          <button
+            onClick={toggleCollapse}
+            className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 p-0.5 rounded"
+            title="Collapse sidebar"
+          >
+            <CollapseIcon collapsed={collapsed} />
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => {
-          const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
+          const baseHref = item.href.split('?')[0]
+          const active = pathname === baseHref || (baseHref !== '/' && pathname.startsWith(baseHref))
           return (
             <div key={item.href}>
               <Link

@@ -29,7 +29,7 @@ export const CONTACT_TYPES = [
   'Career Counsellor',
 ] as const
 
-export const LEAD_TYPES = ['School', 'Tuition Center', 'Personal Teacher'] as const
+export const LEAD_TYPES = ['School', 'Tuition Center', 'Private Teacher'] as const
 export type LeadType = typeof LEAD_TYPES[number]
 
 export const DEFAULT_MAP_CENTER: [number, number] = [45.0, 25.0]

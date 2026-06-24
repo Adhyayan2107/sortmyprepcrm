@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useMemo, useEffect } from 'react'
 import { useLeadPins } from '@/hooks/useLeads'
+import { useUser } from '@/hooks/useUser'
 import { PipelineStage } from '@/types/pipeline.types'
 import { AppUser } from '@/types/user.types'
 import { getAllUsers } from '@/services/userService'
@@ -19,6 +20,8 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
 
 export default function MapPage() {
   const { pins, loading, refetch } = useLeadPins()
+  const { user } = useUser()
+  const isAdmin = user?.role === 'admin'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [updatedPin, setUpdatedPin] = useState<{ id: string; stage: PipelineStage } | null>(null)
   const [users, setUsers] = useState<AppUser[]>([])
@@ -31,15 +34,21 @@ export default function MapPage() {
     getAllUsers().then((res) => { if (res.success) setUsers(res.data) })
   }, [])
 
-  const countries = useMemo(() => [...new Set(pins.map((p) => p.country))].sort(), [pins])
+  // Reps only see their assigned leads on the map
+  const visiblePins = useMemo(
+    () => (isAdmin ? pins : pins.filter((p) => p.assigned_to === user?.id)),
+    [pins, isAdmin, user]
+  )
+
+  const countries = useMemo(() => [...new Set(visiblePins.map((p) => p.country))].sort(), [visiblePins])
 
   const filteredPins = useMemo(() => {
-    return pins.filter((p) => {
+    return visiblePins.filter((p) => {
       if (filters.country && p.country !== filters.country) return false
       if (filters.stage !== 'All' && p.stage !== filters.stage) return false
       return true
     })
-  }, [pins, filters])
+  }, [visiblePins, filters])
 
   const boxSelectedLeads = useMemo(() => {
     return filteredPins.filter((p) => boxSelectedIds.includes(p.id))

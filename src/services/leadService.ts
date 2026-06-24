@@ -8,7 +8,7 @@ export async function getAllLeadPins(): Promise<ServiceResult<LeadMapPin[]>> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from(TABLES.LEADS)
-    .select('id, name, lat, lng, stage, lead_type, country, city')
+    .select('id, name, lat, lng, stage, lead_type, country, city, assigned_to')
     .not('lat', 'is', null)
     .not('lng', 'is', null)
 

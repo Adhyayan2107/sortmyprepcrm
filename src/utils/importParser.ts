@@ -98,11 +98,11 @@ const LEAD_TYPE_MAP: Record<string, LeadType> = {
   'coaching centre': 'Tuition Center',
   tuition: 'Tuition Center',
   coaching: 'Tuition Center',
-  'personal teacher': 'Personal Teacher',
-  'private teacher': 'Personal Teacher',
-  teacher: 'Personal Teacher',
-  tutors: 'Personal Teacher',
-  tutor: 'Personal Teacher',
+  'personal teacher': 'Private Teacher',
+  'private teacher': 'Private Teacher',
+  teacher: 'Private Teacher',
+  tutors: 'Private Teacher',
+  tutor: 'Private Teacher',
 }
 
 const STAGE_MAP: Record<string, PipelineStage> = {

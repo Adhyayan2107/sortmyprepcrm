@@ -38,6 +38,7 @@ export interface LeadMapPin {
   lead_type: LeadType | null
   country: string
   city: string | null
+  assigned_to: string | null
 }
 
 export interface LeadListRow {

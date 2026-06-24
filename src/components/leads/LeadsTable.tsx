@@ -6,15 +6,16 @@ import { LeadType } from '@/lib/constants'
 import StageBadge from '@/components/ui/StageBadge'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
 
-function LeadTypeBadge({ type }: { type: LeadType | null }) {
+function LeadTypeBadge({ type }: { type: string | null }) {
   if (!type) return <span className="text-gray-400 text-xs">—</span>
+  const display = type === 'Personal Teacher' ? 'Private Teacher' : type
   const cls =
     type === 'School'
       ? 'bg-violet-100 text-violet-700'
       : type === 'Tuition Center'
       ? 'bg-amber-100 text-amber-700'
       : 'bg-emerald-100 text-emerald-700'
-  return <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{type}</span>
+  return <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{display}</span>
 }
 
 interface LeadsTableProps {

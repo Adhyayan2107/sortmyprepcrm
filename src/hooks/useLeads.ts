@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { LeadListRow, LeadMapPin } from '@/types/lead.types'
 import { getAllLeadPins, getAllLeadRows } from '@/services/leadService'
 import { createClient } from '@/lib/supabase'
+import { subscribeLeadsUpdated } from '@/lib/leadsSignal'
 
 export function useLeadPins() {
   const [pins, setPins] = useState<LeadMapPin[]>([])
@@ -62,15 +63,17 @@ export function useLeadRows() {
     return () => { supabase.removeChannel(channel) }
   }, [fetch])
 
-  // Re-fetch when focus returns (tab switch) or browser back/forward navigates here
+  // Re-fetch when focus returns (tab switch), browser back/forward, or call page signals an update
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') fetch() }
     const onPop = () => fetch()
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('popstate', onPop)
+    const unsubSignal = subscribeLeadsUpdated(() => fetch())
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('popstate', onPop)
+      unsubSignal()
     }
   }, [fetch])
 

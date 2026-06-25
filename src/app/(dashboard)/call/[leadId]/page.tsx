@@ -10,6 +10,7 @@ import { useUser } from '@/hooks/useUser'
 import { getLeadById, getAllLeadRows, saveCallOutcome, incrementLeadCount } from '@/services/leadService'
 import { getLeadAssignedScript, getScriptsByContactType, assignScriptToLead } from '@/services/scriptService'
 import { logCall, logStageChange } from '@/services/activityService'
+import { signalLeadsUpdated } from '@/lib/leadsSignal'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import StageBadge from '@/components/ui/StageBadge'
 import LeadFormModal from '@/components/leads/LeadFormModal'
@@ -205,7 +206,9 @@ export default function CallPage() {
       await logStageChange(lead.id, lead.stage, newStage as PipelineStage, user.id)
     }
 
-    await saveCallOutcome(lead.id, updates)
+    const saveRes = await saveCallOutcome(lead.id, updates)
+    // Update local state immediately so a second save uses the correct stage
+    if (saveRes.success) setLead(saveRes.data)
 
     // Generate a default note when the rep didn't write anything
     const callbackFormatted = nextCallback
@@ -217,15 +220,13 @@ export default function CallPage() {
     await logCall(lead.id, effectiveNotes, user.id, nextAction, nextCallback || null)
     const countRes = await incrementLeadCount(lead.id, 'call_count', 1)
     if (countRes.success) setLead(countRes.data)
-    else if (newStage && newStage !== lead.stage) {
-      setLead((prev) => prev ? { ...prev, stage: newStage as PipelineStage } : prev)
-    }
 
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
 
-    // Invalidate Next.js router cache so leads page shows updated stage on next visit
+    // Signal the leads page to refetch regardless of how the user navigates back
+    signalLeadsUpdated()
     router.refresh()
   }
 

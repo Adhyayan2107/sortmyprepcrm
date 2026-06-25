@@ -200,15 +200,19 @@ export async function getUserRating(
 export async function assignScriptToLead(
   scriptId: string,
   leadId: string,
-  assignedBy: string
+  assignedBy?: string
 ): Promise<ServiceResult<null>> {
   const supabase = createClient()
+  let userId = assignedBy
+  if (!userId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id ?? ''
+  }
+  // delete existing assignment then insert fresh — avoids relying on a unique constraint
+  await supabase.from('script_lead_usage').delete().eq('lead_id', leadId)
   const { error } = await supabase
     .from('script_lead_usage')
-    .upsert(
-      { script_id: scriptId, lead_id: leadId, assigned_by: assignedBy, assigned_at: new Date().toISOString() },
-      { onConflict: 'lead_id' }
-    )
+    .insert({ script_id: scriptId, lead_id: leadId, assigned_by: userId, assigned_at: new Date().toISOString() })
   if (error) return { success: false, error: error.message }
   return { success: true, data: null }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { LeadListRow, LeadMapPin } from '@/types/lead.types'
 import { getAllLeadPins, getAllLeadRows } from '@/services/leadService'
+import { createClient } from '@/lib/supabase'
 
 export function useLeadPins() {
   const [pins, setPins] = useState<LeadMapPin[]>([])
@@ -21,6 +22,15 @@ export function useLeadPins() {
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('leads-pins-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => { fetch() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [fetch])
 
   return { pins, loading, error, refetch: fetch }
 }
@@ -42,6 +52,15 @@ export function useLeadRows() {
   }, [])
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('leads-rows-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => { fetch() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [fetch])
 
   return { rows, loading, error, refetch: fetch }
 }

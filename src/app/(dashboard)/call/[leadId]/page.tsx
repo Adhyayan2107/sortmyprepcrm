@@ -202,8 +202,8 @@ export default function CallPage() {
     setScript(s)
     setShowScriptPicker(false)
     setNoScriptAssigned(false)
-    if (leadId && user) {
-      await assignScriptToLead(s.id, leadId, user.id)
+    if (leadId) {
+      await assignScriptToLead(s.id, leadId, user?.id)
     }
   }
 

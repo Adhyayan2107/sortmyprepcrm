@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { createClient } from '@/lib/supabase'
 import { Lead } from '@/types/lead.types'
 import { PipelineStage } from '@/types/pipeline.types'
 import { ActivityLog } from '@/types/activity.types'
@@ -51,22 +52,35 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
   const [activeTab, setActiveTab] = useState<TabKey>('info')
   const [showEditModal, setShowEditModal] = useState(false)
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     setLoading(true)
-    Promise.all([
+    const [leadRes, actRes, usersRes, assignedRes, scriptGroups] = await Promise.all([
       getLeadById(leadId),
       getActivityForLead(leadId),
       getAllUsers(),
       getLeadAssignedScript(leadId),
       Promise.all(CONTACT_TYPES.map((t) => getScriptsByContactType(t))),
-    ]).then(([leadRes, actRes, usersRes, assignedRes, scriptGroups]) => {
-      if (leadRes.success) setLead(leadRes.data)
-      if (actRes.success) setActivity(actRes.data)
-      if (usersRes.success) setTeamUsers(usersRes.data)
-      if (assignedRes.success && assignedRes.data) setAssignedScriptId(assignedRes.data.script_id)
-      setAllScripts(scriptGroups.flatMap((r) => (r.success ? r.data : [])))
-      setLoading(false)
-    })
+    ])
+    if (leadRes.success) setLead(leadRes.data)
+    if (actRes.success) setActivity(actRes.data)
+    if (usersRes.success) setTeamUsers(usersRes.data)
+    if (assignedRes.success && assignedRes.data) setAssignedScriptId(assignedRes.data.script_id)
+    setAllScripts(scriptGroups.flatMap((r) => (r.success ? r.data : [])))
+    setLoading(false)
+  }, [leadId])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  // Auto-refresh when this lead is updated externally (e.g. from call page)
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`lead-detail-${leadId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads', filter: `id=eq.${leadId}` }, () => {
+        getLeadById(leadId).then((res) => { if (res.success) setLead(res.data) })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [leadId])
 
   async function handleStageChange(stage: PipelineStage) {
@@ -93,13 +107,13 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
   }
 
   async function handleAssignScript(scriptId: string) {
-    if (!lead || !currentUser) return
+    if (!lead) return
     setAssigningSaving(true)
     if (scriptId === '') {
       await removeScriptFromLead(lead.id)
       setAssignedScriptId('')
     } else {
-      const res = await assignScriptToLead(scriptId, lead.id, currentUser.id)
+      const res = await assignScriptToLead(scriptId, lead.id, currentUser?.id)
       if (res.success) setAssignedScriptId(scriptId)
     }
     setAssigningSaving(false)

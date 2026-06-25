@@ -22,6 +22,7 @@ const ADMIN_LEADS_CHILDREN: NavChild[] = [
   { label: 'Schools',           href: '/leads?type=School',           dot: 'bg-violet-500' },
   { label: 'Tuition Centers',   href: '/leads?type=Tuition+Center',   dot: 'bg-amber-500' },
   { label: 'Private Teachers',  href: '/leads?type=Private+Teacher',  dot: 'bg-emerald-500' },
+  { label: 'Aggregators',       href: '/leads?type=Aggregators',      dot: 'bg-cyan-500' },
 ]
 
 const REP_LEADS_CHILDREN: NavChild[] = [
@@ -29,6 +30,7 @@ const REP_LEADS_CHILDREN: NavChild[] = [
   { label: 'Schools',           href: '/leads?view=mine&type=School',           dot: 'bg-violet-500' },
   { label: 'Tuition Centers',   href: '/leads?view=mine&type=Tuition+Center',   dot: 'bg-amber-500' },
   { label: 'Private Teachers',  href: '/leads?view=mine&type=Private+Teacher',  dot: 'bg-emerald-500' },
+  { label: 'Aggregators',       href: '/leads?view=mine&type=Aggregators',      dot: 'bg-cyan-500' },
 ]
 
 const BASE_NAV: NavItem[] = [

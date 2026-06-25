@@ -18,7 +18,8 @@ interface Props {
   onStageChange: (stage: PipelineStage) => void
   onAssignmentChange: (userId: string) => void
   onCountChange?: (field: 'call_count' | 'message_count' | 'email_count', delta: 1 | -1) => void
-  onViewScripts?: () => void
+  assignedScriptTitle?: string | null
+  onGoToScriptTab?: () => void
 }
 
 function formatCallbackDate(raw: string): string {
@@ -177,7 +178,7 @@ function parseImportedNotes(notes: string | null) {
   return { founderRows, freeText: freeLines.length ? freeLines.join('\n') : null }
 }
 
-export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, lastCallOutcome, onStageChange, onAssignmentChange, onCountChange, onViewScripts }: Props) {
+export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, lastCallOutcome, onStageChange, onAssignmentChange, onCountChange, assignedScriptTitle, onGoToScriptTab }: Props) {
   const { founderRows, freeText } = parseImportedNotes(lead.notes)
 
   return (
@@ -191,6 +192,8 @@ export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCall
               ? 'bg-violet-100 text-violet-700'
               : lead.lead_type === 'Tuition Center'
               ? 'bg-amber-100 text-amber-700'
+              : lead.lead_type === 'Aggregators'
+              ? 'bg-cyan-100 text-cyan-700'
               : 'bg-emerald-100 text-emerald-700'
           }`}>
             {lead.lead_type}
@@ -345,12 +348,14 @@ export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCall
         </div>
       )}
 
-      {onViewScripts && (
+      {onGoToScriptTab && (
         <button
-          onClick={onViewScripts}
-          className="w-full border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] rounded-lg py-2 text-sm font-medium hover:bg-[var(--color-brand-light)] transition-colors"
+          onClick={onGoToScriptTab}
+          className="w-full border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] rounded-lg py-2 text-sm font-medium hover:bg-[var(--color-brand-light)] transition-colors flex items-center justify-center gap-2"
         >
-          View Call Scripts
+          {assignedScriptTitle
+            ? <><span className="text-emerald-500">✓</span> {assignedScriptTitle}</>
+            : 'Assign Call Script'}
         </button>
       )}
     </div>

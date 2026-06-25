@@ -20,6 +20,7 @@ const TYPE_COLORS: Record<LeadType, string> = {
   'School': 'bg-violet-100 text-violet-700 border-violet-200',
   'Tuition Center': 'bg-amber-100 text-amber-700 border-amber-200',
   'Private Teacher': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'Aggregators': 'bg-cyan-100 text-cyan-700 border-cyan-200',
 }
 
 export default function ImportPage() {

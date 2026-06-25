@@ -71,7 +71,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Auto-refresh when this lead is updated externally (e.g. from call page)
+  // Auto-refresh when this lead is updated externally (e.g. from call page via realtime)
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
@@ -81,6 +81,17 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
+  }, [leadId])
+
+  // Re-fetch when tab regains visibility (handles navigating back from call page)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        getLeadById(leadId).then((res) => { if (res.success) setLead(res.data) })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [leadId])
 
   async function handleStageChange(stage: PipelineStage) {
@@ -229,7 +240,8 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
             onStageChange={handleStageChange}
             onAssignmentChange={handleAssignmentChange}
             onCountChange={handleCountChange}
-            onViewScripts={onViewScripts ? () => onViewScripts(lead.id) : undefined}
+            assignedScriptTitle={allScripts.find((s) => s.id === assignedScriptId)?.title ?? null}
+            onGoToScriptTab={() => setActiveTab('script')}
           />
         ) : activeTab === 'script' ? (
           <LeadScriptTab

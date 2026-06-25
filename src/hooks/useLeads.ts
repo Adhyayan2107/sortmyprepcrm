@@ -62,5 +62,12 @@ export function useLeadRows() {
     return () => { supabase.removeChannel(channel) }
   }, [fetch])
 
+  // Re-fetch when the tab regains visibility (e.g. returning from call page)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetch() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [fetch])
+
   return { rows, loading, error, refetch: fetch }
 }

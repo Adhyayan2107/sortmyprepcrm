@@ -18,6 +18,7 @@ const TYPE_BADGE: Record<string, string> = {
   'Tuition Center': 'bg-amber-100 text-amber-700',
   'Private Teacher': 'bg-emerald-100 text-emerald-700',
   'Personal Teacher': 'bg-emerald-100 text-emerald-700',
+  Aggregators: 'bg-cyan-100 text-cyan-700',
 }
 
 // Maps LeadType → CONTACT_TYPES key for default script selection

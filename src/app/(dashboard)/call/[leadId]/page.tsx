@@ -197,8 +197,7 @@ export default function CallPage() {
 
     const nextAction = pointers.filter((p) => p.trim()).join('\n') || null
 
-    const updates: { next_callback?: string | null; next_action?: string | null; stage?: string } = {
-      next_action: nextAction,
+    const updates: { next_callback?: string | null; stage?: string } = {
       next_callback: nextCallback || null,
     }
 

@@ -131,7 +131,7 @@ export async function updateLeadDetails(
 
 export async function saveCallOutcome(
   id: string,
-  updates: { next_callback?: string | null; next_action?: string | null; stage?: string }
+  updates: { next_callback?: string | null; stage?: string }
 ): Promise<ServiceResult<Lead>> {
   const supabase = createClient()
   // Split UPDATE and SELECT: a RLS SELECT policy that differs from UPDATE would

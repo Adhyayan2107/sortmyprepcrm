@@ -231,15 +231,19 @@ export async function getLeadAssignedScript(
   leadId: string
 ): Promise<ServiceResult<{ script_id: string; script: Script } | null>> {
   const supabase = createClient()
-  const { data, error } = await supabase
+  const { data: usage, error: usageErr } = await supabase
     .from('script_lead_usage')
-    .select('script_id, script:scripts(id, title, contact_type, usage_count, content, archived, document_url, document_name, created_by, created_at)')
+    .select('script_id')
     .eq('lead_id', leadId)
     .order('assigned_at', { ascending: false })
     .limit(1)
-  if (error) return { success: false, error: error.message }
-  if (!data || data.length === 0) return { success: true, data: null }
-  return { success: true, data: { script_id: data[0].script_id, script: data[0].script as unknown as Script } }
+    .maybeSingle()
+  if (usageErr) return { success: false, error: usageErr.message }
+  if (!usage) return { success: true, data: null }
+
+  const scriptRes = await getScriptById(usage.script_id)
+  if (!scriptRes.success) return { success: false, error: scriptRes.error }
+  return { success: true, data: { script_id: usage.script_id, script: scriptRes.data } }
 }
 
 export async function getScriptLeaderboard(): Promise<ServiceResult<ScriptWithScore[]>> {

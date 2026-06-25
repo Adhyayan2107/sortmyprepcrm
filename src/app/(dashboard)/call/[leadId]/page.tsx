@@ -21,13 +21,6 @@ const TYPE_BADGE: Record<string, string> = {
   Aggregators: 'bg-cyan-100 text-cyan-700',
 }
 
-// Maps LeadType → CONTACT_TYPES key for default script selection
-const LEAD_TYPE_TO_CONTACT_TYPE: Record<string, string> = {
-  School: 'School',
-  'Tuition Center': 'Coaching Center',
-  'Private Teacher': 'Private Teacher',
-  'Personal Teacher': 'Private Teacher',
-}
 
 function parsePointers(raw: string | null): string[] {
   if (!raw) return ['']
@@ -97,7 +90,6 @@ export default function CallPage() {
   const [script, setScript] = useState<Script | null>(null)
   const [allScripts, setAllScripts] = useState<Script[]>([])
   const [showScriptPicker, setShowScriptPicker] = useState(false)
-  const [noScriptAssigned, setNoScriptAssigned] = useState(false)
   const [loading, setLoading] = useState(true)
 
   // Queue of assigned lead IDs for navigation
@@ -122,29 +114,6 @@ export default function CallPage() {
     })
   }, [])
 
-  // Once allScripts is loaded and a lead has no assigned script, auto-select + persist the top script for its type
-  useEffect(() => {
-    if (!noScriptAssigned || allScripts.length === 0 || script || !lead || !user) return
-    const contactType = lead.lead_type ? LEAD_TYPE_TO_CONTACT_TYPE[lead.lead_type] : undefined
-    const defaultScript =
-      allScripts.find((s) => s.contact_type === contactType) ??
-      allScripts[0] ??
-      null
-    if (!defaultScript) {
-      // Only show picker when there are truly no scripts to fall back on
-      setShowScriptPicker(true)
-      return
-    }
-    setScript(defaultScript)
-    setNoScriptAssigned(false)
-    setShowScriptPicker(false)
-    // Persist immediately so detail panel Script tab reflects this choice
-    const { id: scriptId, ..._ } = defaultScript
-    const leadId = lead.id
-    const userId = user.id
-    assignScriptToLead(scriptId, leadId, userId)
-  }, [noScriptAssigned, allScripts, script, lead, user])
-
   const loadLead = useCallback(async (id: string) => {
     setLoading(true)
     setSaved(false)
@@ -152,7 +121,6 @@ export default function CallPage() {
     // Reset picker and script state so prev/next never carries over stale state
     setScript(null)
     setShowScriptPicker(false)
-    setNoScriptAssigned(false)
 
     const [leadRes, assignedRes] = await Promise.all([
       getLeadById(id),
@@ -169,12 +137,8 @@ export default function CallPage() {
 
     if (assignedRes.success && assignedRes.data) {
       setScript(assignedRes.data.script)
-      setNoScriptAssigned(false)
-      setShowScriptPicker(false)
     } else {
       setScript(null)
-      setNoScriptAssigned(true)
-      // Don't open picker here — let the auto-select useEffect run first
     }
 
     setLoading(false)
@@ -202,7 +166,6 @@ export default function CallPage() {
   async function handleSelectScript(s: Script) {
     setScript(s)
     setShowScriptPicker(false)
-    setNoScriptAssigned(false)
     if (leadId) {
       await assignScriptToLead(s.id, leadId, user?.id)
     }
@@ -292,7 +255,7 @@ export default function CallPage() {
         <ScriptPickerModal
           scripts={allScripts}
           onSelect={handleSelectScript}
-          onClose={noScriptAssigned ? undefined : () => setShowScriptPicker(false)}
+          onClose={() => setShowScriptPicker(false)}
         />
       )}
 

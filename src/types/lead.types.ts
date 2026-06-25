@@ -1,4 +1,4 @@
-import { PipelineStage } from './pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 import { LeadType } from '@/lib/constants'
 
 export interface Lead {
@@ -73,15 +73,3 @@ export interface LeadInsert {
   email_count?: number
 }
 
-export interface CSVRow {
-  name: string
-  country: string
-  city?: string
-  lat?: string
-  lng?: string
-  website?: string
-  phone?: string
-  email?: string
-  curriculum?: string
-  source?: string
-}

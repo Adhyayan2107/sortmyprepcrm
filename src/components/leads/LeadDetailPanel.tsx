@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Lead } from '@/types/lead.types'
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 import { ActivityLog } from '@/types/activity.types'
 import { AppUser } from '@/types/user.types'
 import { Script } from '@/types/script.types'

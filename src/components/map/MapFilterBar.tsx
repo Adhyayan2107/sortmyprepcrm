@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PIPELINE_STAGES } from '@/lib/constants'
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 import { STAGE_COLORS } from '@/utils/stageColors'
 import { AppUser } from '@/types/user.types'
 

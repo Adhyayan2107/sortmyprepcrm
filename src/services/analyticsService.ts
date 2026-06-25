@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase'
 import { ServiceResult } from '@/types/api.types'
-import { TABLES } from '@/lib/constants'
+import { TABLES, STAGE_POINTS } from '@/lib/constants'
 
 export interface KpiData {
   assigned: number
@@ -47,17 +47,6 @@ export interface AnalyticsSummary {
 export interface RepOption {
   id: string
   name: string
-}
-
-const STAGE_ORDER: Record<string, number> = {
-  'New Lead': 1,
-  'Contacted': 2,
-  'Responded': 3,
-  'Meeting Booked': 4,
-  'Meeting Done': 5,
-  'Negotiating': 6,
-  'Confirmed': 7,
-  'Blocked/Dead': 0,
 }
 
 const RESPONDED_STAGES = new Set(['Responded', 'Meeting Booked', 'Meeting Done', 'Negotiating', 'Confirmed'])
@@ -133,7 +122,7 @@ export async function getAnalyticsSummary(
   }
   const stageFunnel: StageFunnelItem[] = Object.entries(stageCounts)
     .map(([stage, count]) => ({ stage, count }))
-    .sort((a, b) => (STAGE_ORDER[b.stage] ?? 0) - (STAGE_ORDER[a.stage] ?? 0))
+    .sort((a, b) => (STAGE_POINTS[b.stage] ?? 0) - (STAGE_POINTS[a.stage] ?? 0))
 
   // Outreach funnel
   const outreachFunnel = buildOutreachFunnel(leads)

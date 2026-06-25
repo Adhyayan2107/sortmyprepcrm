@@ -1,4 +1,4 @@
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 
 export const STAGE_COLORS: Record<PipelineStage, string> = {
   'New Lead': '#94A3B8',
@@ -13,18 +13,4 @@ export const STAGE_COLORS: Record<PipelineStage, string> = {
 
 export function getStageColor(stage: PipelineStage): string {
   return STAGE_COLORS[stage] ?? '#94A3B8'
-}
-
-export function getStageBgClass(stage: PipelineStage): string {
-  const map: Record<PipelineStage, string> = {
-    'New Lead': 'bg-slate-400',
-    'Contacted': 'bg-blue-400',
-    'Responded': 'bg-sky-400',
-    'Meeting Booked': 'bg-yellow-400',
-    'Meeting Done': 'bg-orange-400',
-    'Negotiating': 'bg-violet-400',
-    'Confirmed': 'bg-emerald-400',
-    'Blocked/Dead': 'bg-red-400',
-  }
-  return map[stage] ?? 'bg-slate-400'
 }

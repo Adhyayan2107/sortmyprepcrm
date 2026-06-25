@@ -29,6 +29,8 @@ export const CONTACT_TYPES = [
   'Career Counsellor',
 ] as const
 
+export type PipelineStage = (typeof PIPELINE_STAGES)[number]
+
 export const LEAD_TYPES = ['School', 'Tuition Center', 'Private Teacher'] as const
 export type LeadType = typeof LEAD_TYPES[number]
 

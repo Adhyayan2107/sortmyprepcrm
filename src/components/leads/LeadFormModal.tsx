@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Lead, LeadInsert } from '@/types/lead.types'
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 import { LeadType } from '@/lib/constants'
 import { createLead, updateLeadDetails } from '@/services/leadService'
 import LeadFormFields, { LeadFormValues } from './LeadFormFields'

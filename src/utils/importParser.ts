@@ -2,7 +2,7 @@ import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { LeadInsert } from '@/types/lead.types'
 import { CURRICULA, LeadType } from '@/lib/constants'
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 
 // Maps lowercase column header → internal field name
 const COL_ALIAS: Record<string, string> = {

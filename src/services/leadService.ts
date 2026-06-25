@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase'
 import { Lead, LeadInsert, LeadListRow, LeadMapPin } from '@/types/lead.types'
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 import { ServiceResult } from '@/types/api.types'
 import { TABLES } from '@/lib/constants'
 

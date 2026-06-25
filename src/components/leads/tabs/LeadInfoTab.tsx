@@ -1,7 +1,7 @@
 'use client'
 
 import { Lead } from '@/types/lead.types'
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 import { AppUser } from '@/types/user.types'
 import { PIPELINE_STAGES } from '@/lib/constants'
 import StageBadge from '@/components/ui/StageBadge'

@@ -1,4 +1,4 @@
-import { PipelineStage } from '@/types/pipeline.types'
+import { PipelineStage } from '@/lib/constants'
 
 interface StageBadgeProps {
   stage: PipelineStage

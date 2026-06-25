@@ -149,19 +149,16 @@ export default function CallPage() {
     loadLead(leadId)
   }, [leadId, loadLead])
 
-  // Build the navigation queue from leads assigned to the current rep
+  // Build the navigation queue from all visible leads (RLS scopes this per role)
   useEffect(() => {
-    if (!user) return
     getAllLeadRows().then((res) => {
       if (!res.success) return
-      const mine = res.data
-        .filter((r) => r.assigned_to === user.id)
-        .map((r) => r.id)
-      const currentIdx = mine.indexOf(leadId)
-      setQueue(mine)
+      const ids = res.data.map((r) => r.id)
+      const currentIdx = ids.indexOf(leadId)
+      setQueue(ids)
       setQueueIdx(currentIdx >= 0 ? currentIdx : 0)
     })
-  }, [leadId, user])
+  }, [leadId])
 
   async function handleSelectScript(s: Script) {
     setScript(s)
@@ -423,14 +420,13 @@ export default function CallPage() {
                     </pre>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <p className="text-slate-400 text-sm mb-3">No script selected for this call.</p>
-                    <button
-                      onClick={() => setShowScriptPicker(true)}
-                      className="px-4 py-2 rounded-lg bg-[#2563EB] text-white text-sm font-medium hover:bg-[#1D4ED8] transition-colors"
-                    >
-                      Pick a Script
-                    </button>
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-slate-400 text-sm">
+                      No script assigned —{' '}
+                      <button onClick={() => setShowScriptPicker(true)} className="text-[#2563EB] hover:underline font-medium">
+                        assign one
+                      </button>
+                    </p>
                   </div>
                 )
               ) : (

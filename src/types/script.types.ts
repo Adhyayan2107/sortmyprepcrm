@@ -49,3 +49,12 @@ export interface ScriptUpdate {
   document_url?: string | null
   document_name?: string | null
 }
+
+export interface ScriptQuestion {
+  id: string
+  script_id: string
+  question: string
+  answer: string | null
+  sort_order: number
+  created_at: string
+}

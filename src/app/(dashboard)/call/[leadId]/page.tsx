@@ -14,6 +14,7 @@ import { signalLeadsUpdated } from '@/lib/leadsSignal'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import StageBadge from '@/components/ui/StageBadge'
 import LeadFormModal from '@/components/leads/LeadFormModal'
+import CallQuestionsTab from '@/components/call/CallQuestionsTab'
 
 const TYPE_BADGE: Record<string, string> = {
   School: 'bg-violet-100 text-violet-700',
@@ -109,7 +110,7 @@ export default function CallPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // Script tab
-  const [scriptTab, setScriptTab] = useState<'script' | 'notes'>('script')
+  const [scriptTab, setScriptTab] = useState<'script' | 'notes' | 'questions'>('script')
 
   // Load all scripts once (for picker + auto-default)
   useEffect(() => {
@@ -422,7 +423,7 @@ export default function CallPage() {
             {/* Tabs + Change Script */}
             <div className="flex items-center border-b border-slate-200 bg-white shrink-0 px-2">
               <div className="flex flex-1">
-                {(['script', 'notes'] as const).map((t) => (
+                {([['script', 'Call Script'], ['notes', 'Call Notes'], ['questions', 'Questions']] as const).map(([t, label]) => (
                   <button
                     key={t}
                     onClick={() => setScriptTab(t)}
@@ -432,11 +433,11 @@ export default function CallPage() {
                         : 'border-transparent text-slate-500 hover:text-slate-700'
                     }`}
                   >
-                    {t === 'script' ? 'Call Script' : 'Call Notes'}
+                    {label}
                   </button>
                 ))}
               </div>
-              {scriptTab === 'script' && (
+              {(scriptTab === 'script' || scriptTab === 'questions') && (
                 <button
                   onClick={() => setShowScriptPicker(true)}
                   className="text-xs font-medium text-slate-500 hover:text-[#2563EB] border border-slate-200 hover:border-[#2563EB] rounded-lg px-3 py-1.5 transition-colors shrink-0 mr-2"
@@ -468,6 +469,8 @@ export default function CallPage() {
                     </p>
                   </div>
                 )
+              ) : scriptTab === 'questions' ? (
+                <CallQuestionsTab scriptId={script?.id ?? null} isAdmin={user?.role === 'admin'} />
               ) : (
                 <div className="max-w-2xl mx-auto">
                   <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Call Notes</p>

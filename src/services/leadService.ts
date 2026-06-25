@@ -134,13 +134,20 @@ export async function saveCallOutcome(
   updates: { next_callback?: string | null; next_action?: string | null; stage?: string }
 ): Promise<ServiceResult<Lead>> {
   const supabase = createClient()
-  const { data, error } = await supabase
+  // Split UPDATE and SELECT: a RLS SELECT policy that differs from UPDATE would
+  // cause .select().single() after update to return no rows and mask the write.
+  const { error: updateErr } = await supabase
     .from(TABLES.LEADS)
     .update({ ...updates, last_activity: new Date().toISOString() })
     .eq('id', id)
-    .select()
+  if (updateErr) return { success: false, error: updateErr.message }
+
+  const { data, error: fetchErr } = await supabase
+    .from(TABLES.LEADS)
+    .select('*')
+    .eq('id', id)
     .single()
-  if (error) return { success: false, error: error.message }
+  if (fetchErr) return { success: false, error: fetchErr.message }
   return { success: true, data: data as Lead }
 }
 

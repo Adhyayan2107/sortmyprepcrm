@@ -1,7 +1,8 @@
 'use client'
 
 import { Suspense } from 'react'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { subscribeLeadsUpdated } from '@/lib/leadsSignal'
 import { useSearchParams } from 'next/navigation'
 import { useLeadRows } from '@/hooks/useLeads'
 import { PipelineStage } from '@/lib/constants'
@@ -234,9 +235,19 @@ function LeadsPageInner() {
 }
 
 export default function LeadsPage() {
+  const [fetchKey, setFetchKey] = useState(0)
+  const mounted = useRef(false)
+
+  useEffect(() => {
+    mounted.current = true
+    return subscribeLeadsUpdated(() => {
+      if (mounted.current) setFetchKey((k) => k + 1)
+    })
+  }, [])
+
   return (
     <Suspense fallback={null}>
-      <LeadsPageInner />
+      <LeadsPageInner key={fetchKey} />
     </Suspense>
   )
 }

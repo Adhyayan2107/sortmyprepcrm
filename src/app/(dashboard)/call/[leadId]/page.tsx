@@ -106,6 +106,7 @@ export default function CallPage() {
   const [newStage, setNewStage] = useState<PipelineStage | ''>('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Script tab
   const [scriptTab, setScriptTab] = useState<'script' | 'notes'>('script')
@@ -206,9 +207,14 @@ export default function CallPage() {
       await logStageChange(lead.id, lead.stage, newStage as PipelineStage, user.id)
     }
 
+    setSaveError(null)
     const saveRes = await saveCallOutcome(lead.id, updates)
-    // Update local state immediately so a second save uses the correct stage
-    if (saveRes.success) setLead(saveRes.data)
+    if (!saveRes.success) {
+      setSaveError(saveRes.error ?? 'Save failed')
+      setSaving(false)
+      return
+    }
+    setLead(saveRes.data)
 
     // Generate a default note when the rep didn't write anything
     const callbackFormatted = nextCallback
@@ -545,6 +551,10 @@ export default function CallPage() {
             >
               {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save & Log Call'}
             </button>
+
+            {saveError && (
+              <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2 text-center">{saveError}</p>
+            )}
 
             {queue.length > 1 && (
               <button

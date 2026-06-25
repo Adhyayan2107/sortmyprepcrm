@@ -12,6 +12,7 @@ import { getLeadAssignedScript, getScriptsByContactType, assignScriptToLead } fr
 import { logCall, logStageChange } from '@/services/activityService'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import StageBadge from '@/components/ui/StageBadge'
+import LeadFormModal from '@/components/leads/LeadFormModal'
 
 const TYPE_BADGE: Record<string, string> = {
   School: 'bg-violet-100 text-violet-700',
@@ -90,6 +91,7 @@ export default function CallPage() {
   const [script, setScript] = useState<Script | null>(null)
   const [allScripts, setAllScripts] = useState<Script[]>([])
   const [showScriptPicker, setShowScriptPicker] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [loading, setLoading] = useState(true)
 
   // Queue of assigned lead IDs for navigation
@@ -180,6 +182,13 @@ export default function CallPage() {
     setPointers((prev) => [...prev, ''])
   }
 
+  async function handleCountChange(field: 'call_count' | 'message_count' | 'email_count', delta: 1 | -1) {
+    if (!lead) return
+    setLead((prev) => prev ? { ...prev, [field]: Math.max(0, (prev[field] ?? 0) + delta) } : prev)
+    const res = await incrementLeadCount(lead.id, field, delta)
+    if (res.success) setLead(res.data)
+  }
+
   async function handleSave() {
     if (!lead || !user) return
     setSaving(true)
@@ -206,15 +215,15 @@ export default function CallPage() {
       || (callbackFormatted ? `Call done. Next call on ${callbackFormatted}.` : 'Call done.')
 
     await logCall(lead.id, effectiveNotes, user.id, nextAction, nextCallback || null)
-    await incrementLeadCount(lead.id, 'call_count', 1)
+    const countRes = await incrementLeadCount(lead.id, 'call_count', 1)
+    if (countRes.success) setLead(countRes.data)
+    else if (newStage && newStage !== lead.stage) {
+      setLead((prev) => prev ? { ...prev, stage: newStage as PipelineStage } : prev)
+    }
 
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-
-    if (newStage && newStage !== lead.stage) {
-      setLead((prev) => prev ? { ...prev, stage: newStage as PipelineStage } : prev)
-    }
 
     // Invalidate Next.js router cache so leads page shows updated stage on next visit
     router.refresh()
@@ -253,6 +262,15 @@ export default function CallPage() {
           scripts={allScripts}
           onSelect={handleSelectScript}
           onClose={() => setShowScriptPicker(false)}
+        />
+      )}
+
+      {showEditModal && (
+        <LeadFormModal
+          mode="edit"
+          initial={lead}
+          onSave={(updated) => { setLead(updated); setShowEditModal(false) }}
+          onClose={() => setShowEditModal(false)}
         />
       )}
 
@@ -310,7 +328,15 @@ export default function CallPage() {
           {/* LEFT — Lead Details */}
           <div className="w-64 shrink-0 bg-white border-r border-slate-200 overflow-y-auto p-4 space-y-4">
             <div>
-              <p className="text-[10px] font-semibold text-slate-400 uppercase mb-2">Contact</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase">Contact</p>
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="text-[11px] text-[#2563EB] hover:underline font-medium"
+                >
+                  Edit Lead
+                </button>
+              </div>
               {lead.phone && (
                 <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-sm text-slate-700 hover:text-emerald-600 transition-colors">
                   <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,16 +365,23 @@ export default function CallPage() {
 
             <div className="border-t border-slate-100 pt-3">
               <p className="text-[10px] font-semibold text-slate-400 uppercase mb-2">Outreach</p>
-              <div className="space-y-1 text-xs text-slate-600">
-                <div className="flex justify-between">
-                  <span>Calls</span><span className="font-semibold">{lead.call_count}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Messages</span><span className="font-semibold">{lead.message_count}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Emails</span><span className="font-semibold">{lead.email_count}</span>
-                </div>
+              <div className="space-y-2 text-xs text-slate-600">
+                {([ ['call_count', 'Calls'], ['message_count', 'Messages'], ['email_count', 'Emails'] ] as const).map(([field, label]) => (
+                  <div key={field} className="flex items-center justify-between">
+                    <span>{label}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleCountChange(field, -1)}
+                        className="w-5 h-5 rounded border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100 leading-none"
+                      >−</button>
+                      <span className="font-semibold w-4 text-center">{lead[field]}</span>
+                      <button
+                        onClick={() => handleCountChange(field, 1)}
+                        className="w-5 h-5 rounded border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100 leading-none"
+                      >+</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

@@ -235,10 +235,11 @@ export async function getLeadAssignedScript(
     .from('script_lead_usage')
     .select('script_id, script:scripts(id, title, contact_type, usage_count, content, archived, document_url, document_name, created_by, created_at)')
     .eq('lead_id', leadId)
-    .maybeSingle()
+    .order('assigned_at', { ascending: false })
+    .limit(1)
   if (error) return { success: false, error: error.message }
-  if (!data) return { success: true, data: null }
-  return { success: true, data: { script_id: data.script_id, script: data.script as unknown as Script } }
+  if (!data || data.length === 0) return { success: true, data: null }
+  return { success: true, data: { script_id: data[0].script_id, script: data[0].script as unknown as Script } }
 }
 
 export async function getScriptLeaderboard(): Promise<ServiceResult<ScriptWithScore[]>> {

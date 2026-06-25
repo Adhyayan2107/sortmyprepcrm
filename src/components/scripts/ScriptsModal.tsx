@@ -18,6 +18,12 @@ export default function ScriptsModal({ onClose }: ScriptsModalProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
     setLoading(true)
     getScriptsByContactType(activeTab).then((res) => {
       if (res.success) setScripts(res.data)

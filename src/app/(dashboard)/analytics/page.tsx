@@ -296,9 +296,13 @@ function AnalyticsInner() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {viewingRepName ? `Viewing ${viewingRepName}'s pipeline` : 'Full team overview'}
-            </p>
+            {viewingRepName ? (
+              <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-100 text-xs font-medium text-blue-700">
+                Viewing {viewingRepName}&apos;s pipeline
+              </span>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-0.5">Full team overview</p>
+            )}
           </div>
           {isAdmin && (
             <Select value={selectedRepId} onValueChange={(v) => setSelectedRepId(v ?? '')}>

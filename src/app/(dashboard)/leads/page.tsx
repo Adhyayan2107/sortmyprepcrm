@@ -57,6 +57,7 @@ function LeadsPageInner() {
   const [bulkAssignTo, setBulkAssignTo] = useState('')
   const [bulkSaving, setBulkSaving] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   const [showScripts, setShowScripts] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editRow, setEditRow] = useState<LeadListRow | null>(null)
@@ -136,9 +137,9 @@ function LeadsPageInner() {
 
   async function handleBulkDelete() {
     if (selected.size === 0) return
-    const confirmed = window.confirm(`Delete ${selected.size} lead${selected.size > 1 ? 's' : ''}? This cannot be undone.`)
-    if (!confirmed) return
+    if (!bulkDeleteConfirm) { setBulkDeleteConfirm(true); return }
     setBulkDeleting(true)
+    setBulkDeleteConfirm(false)
     const res = await bulkDeleteLeads([...selected])
     if (res.success) { setSelected(new Set()); await refetch() }
     setBulkDeleting(false)
@@ -175,11 +176,13 @@ function LeadsPageInner() {
           bulkAssignTo={bulkAssignTo}
           saving={bulkSaving}
           deleting={bulkDeleting}
+          deleteConfirm={bulkDeleteConfirm}
           users={users}
           onAssignToChange={setBulkAssignTo}
           onAssign={handleBulkAssign}
           onDelete={handleBulkDelete}
-          onClear={() => setSelected(new Set())}
+          onCancelDelete={() => setBulkDeleteConfirm(false)}
+          onClear={() => { setSelected(new Set()); setBulkDeleteConfirm(false) }}
           onSelectAll={toggleSelectAll}
         />
       )}

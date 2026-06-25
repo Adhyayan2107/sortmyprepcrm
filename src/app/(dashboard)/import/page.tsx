@@ -276,6 +276,11 @@ export default function ImportPage() {
               <p className="font-semibold text-gray-800">
                 {leads.length} valid row{leads.length !== 1 ? 's' : ''} ready to import
               </p>
+              {leads.length === 0 && parseErrors.length === 0 && (
+                <p className="text-sm text-amber-600 mt-0.5">
+                  No rows were parsed — check that your column headers match the supported names below.
+                </p>
+              )}
               {parseErrors.length > 0 && (
                 <p className="text-sm text-red-500">
                   {parseErrors.length} row{parseErrors.length !== 1 ? 's' : ''} skipped (see below)

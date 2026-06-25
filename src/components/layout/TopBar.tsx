@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { signOut } from '@/services/userService'
 
@@ -16,10 +16,16 @@ function getInitials(name: string): string {
 
 export default function TopBar() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useUser()
   const [searchValue, setSearchValue] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Clear search input when navigating away from the leads page
+  useEffect(() => {
+    if (!pathname.startsWith('/leads')) setSearchValue('')
+  }, [pathname])
 
   // Close user menu on outside click
   useEffect(() => {

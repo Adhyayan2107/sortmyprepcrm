@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Lead } from '@/types/lead.types'
 import { PipelineStage } from '@/lib/constants'
@@ -51,23 +51,31 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
   const [addingNote, setAddingNote] = useState(false)
   const [activeTab, setActiveTab] = useState<TabKey>('info')
   const [showEditModal, setShowEditModal] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const scriptsLoadedRef = useRef(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const [leadRes, actRes, usersRes, assignedRes, scriptGroups] = await Promise.all([
+    scriptsLoadedRef.current = false
+    const [leadRes, actRes, usersRes, assignedRes] = await Promise.all([
       getLeadById(leadId),
       getActivityForLead(leadId),
       getAllUsers(),
       getLeadAssignedScript(leadId),
-      Promise.all(CONTACT_TYPES.map((t) => getScriptsByContactType(t))),
     ])
     if (leadRes.success) setLead(leadRes.data)
     if (actRes.success) setActivity(actRes.data)
     if (usersRes.success) setTeamUsers(usersRes.data)
     if (assignedRes.success && assignedRes.data) setAssignedScriptId(assignedRes.data.script_id)
-    setAllScripts(scriptGroups.flatMap((r) => (r.success ? r.data : [])))
     setLoading(false)
   }, [leadId])
+
+  async function loadScripts() {
+    if (scriptsLoadedRef.current) return
+    scriptsLoadedRef.current = true
+    const groups = await Promise.all(CONTACT_TYPES.map((t) => getScriptsByContactType(t)))
+    setAllScripts(groups.flatMap((r) => (r.success ? r.data : [])))
+  }
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -132,13 +140,9 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
 
   async function handleDelete() {
     if (!lead) return
-    const confirmed = window.confirm(`Delete "${lead.name}"? This cannot be undone.`)
-    if (!confirmed) return
+    if (!deleteConfirm) { setDeleteConfirm(true); return }
     const res = await deleteLead(lead.id)
-    if (res.success) {
-      onDelete?.(lead.id)
-      onClose()
-    }
+    if (res.success) { onDelete?.(lead.id); onClose() }
   }
 
   async function handleCountChange(
@@ -165,7 +169,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
 
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
         <h2 className="text-base font-semibold text-[var(--color-brand-primary)] truncate pr-4">
           {lead?.name ?? 'Lead Details'}
         </h2>
@@ -181,11 +185,19 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
                 </button>
               )}
               {currentUser?.role === 'admin' && (
-                <button onClick={handleDelete} className="text-slate-400 hover:text-red-500 transition-colors" title="Delete lead">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                deleteConfirm ? (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <button onClick={handleDelete} className="text-red-600 font-semibold hover:underline">Delete</button>
+                    <span className="text-slate-300">·</span>
+                    <button onClick={() => setDeleteConfirm(false)} className="text-slate-400 hover:underline">Cancel</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setDeleteConfirm(true)} className="text-slate-400 hover:text-red-500 transition-colors" title="Delete lead">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )
               )}
               <a
                 href={`/call/${lead.id}`}
@@ -207,15 +219,15 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
         </div>
       </div>
 
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-slate-200">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key)}
+            onClick={() => { setActiveTab(key); if (key === 'script') loadScripts() }}
             className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
               activeTab === key
                 ? 'border-b-2 border-[var(--color-brand-accent)] text-[var(--color-brand-accent)]'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             {label}

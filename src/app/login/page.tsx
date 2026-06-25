@@ -11,6 +11,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  const [sendingReset, setSendingReset] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,10 +20,7 @@ export default function LoginPage() {
     setError(null)
 
     const supabase = createClient()
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
       setError(authError.message)
@@ -38,6 +37,20 @@ export default function LoginPage() {
     router.refresh()
   }
 
+  async function handleForgotPassword() {
+    if (!email) {
+      setError('Enter your email above, then click Forgot password.')
+      return
+    }
+    setSendingReset(true)
+    const supabase = createClient()
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`,
+    })
+    setResetSent(true)
+    setSendingReset(false)
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm">
@@ -52,47 +65,72 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 border border-slate-200 rounded-lg px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-colors"
-                placeholder="you@example.com"
-              />
+          {resetSent ? (
+            <div className="text-center py-4 space-y-2">
+              <p className="text-sm font-semibold text-emerald-700">Reset link sent</p>
+              <p className="text-xs text-slate-500">Check your email at <strong>{email}</strong> for a password reset link.</p>
+              <button
+                type="button"
+                onClick={() => setResetSent(false)}
+                className="text-xs text-[#2563EB] hover:underline mt-2"
+              >
+                Back to sign in
+              </button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-10 border border-slate-200 rounded-lg px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-colors"
+                  placeholder="you@example.com"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 border border-slate-200 rounded-lg px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-10 border border-slate-200 rounded-lg px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
-            )}
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold h-10 rounded-lg text-sm transition-colors disabled:opacity-60"
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold h-10 rounded-lg text-sm transition-colors disabled:opacity-60"
+              >
+                {loading ? 'Signing in…' : 'Sign in'}
+              </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={sendingReset}
+                  className="text-xs text-slate-400 hover:text-[#2563EB] transition-colors disabled:opacity-40"
+                >
+                  {sendingReset ? 'Sending…' : 'Forgot password?'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <p className="text-xs text-slate-400 text-center mt-6">

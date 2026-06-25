@@ -84,6 +84,23 @@ export default function MapPage() {
       ) : (
         <>
           <MapFilterBar filters={filters} onChange={setFilters} countries={countries} users={users} />
+          {visiblePins.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="bg-white rounded-xl shadow-lg border border-slate-200 px-6 py-8 text-center max-w-sm mx-4">
+                <p className="text-slate-600 text-sm font-medium">No leads on the map</p>
+                <p className="text-slate-400 text-xs mt-1">
+                  {isAdmin ? 'No leads have coordinates yet — add lat/lng via import or edit.' : 'You have no assigned leads yet.'}
+                </p>
+              </div>
+            </div>
+          )}
+          {visiblePins.length > 0 && filteredPins.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="bg-white rounded-xl shadow-lg border border-slate-200 px-5 py-4 text-center">
+                <p className="text-slate-500 text-sm">No leads match the current filters.</p>
+              </div>
+            </div>
+          )}
           <MapView
             pins={filteredPins}
             onPinClick={(id) => setSelectedId(id)}

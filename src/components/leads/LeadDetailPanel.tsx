@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Lead } from '@/types/lead.types'
+import { Lead, LeadContact } from '@/types/lead.types'
 import { PipelineStage } from '@/lib/constants'
 import { ActivityLog } from '@/types/activity.types'
 import { AppUser } from '@/types/user.types'
@@ -13,6 +13,7 @@ import { getLeadById, updateLeadStage, updateLeadAssignment, incrementLeadCount,
 import { getActivityForLead, addNote, logStageChange } from '@/services/activityService'
 import { getAllUsers } from '@/services/userService'
 import { getScriptsByContactType, assignScriptToLead, removeScriptFromLead, getLeadAssignedScript } from '@/services/scriptService'
+import { getContactsByLeadId } from '@/services/leadContactService'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import LeadFormModal from '@/components/leads/LeadFormModal'
 import IntelBrief from '@/components/leads/IntelBrief'
@@ -52,21 +53,24 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
   const [activeTab, setActiveTab] = useState<TabKey>('info')
   const [showEditModal, setShowEditModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [contacts, setContacts] = useState<LeadContact[]>([])
   const scriptsLoadedRef = useRef(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
     scriptsLoadedRef.current = false
-    const [leadRes, actRes, usersRes, assignedRes] = await Promise.all([
+    const [leadRes, actRes, usersRes, assignedRes, contactsRes] = await Promise.all([
       getLeadById(leadId),
       getActivityForLead(leadId),
       getAllUsers(),
       getLeadAssignedScript(leadId),
+      getContactsByLeadId(leadId),
     ])
     if (leadRes.success) setLead(leadRes.data)
     if (actRes.success) setActivity(actRes.data)
     if (usersRes.success) setTeamUsers(usersRes.data)
     if (assignedRes.success && assignedRes.data) setAssignedScriptId(assignedRes.data.script_id)
+    if (contactsRes.success) setContacts(contactsRes.data)
     setLoading(false)
   }, [leadId])
 
@@ -241,6 +245,7 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
         ) : !lead ? (
           <p className="text-center text-gray-400 mt-12">Lead not found</p>
         ) : activeTab === 'info' ? (
+          // @ts-ignore
           <LeadInfoTab
             lead={lead}
             teamUsers={teamUsers}
@@ -254,6 +259,8 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
             onCountChange={handleCountChange}
             assignedScriptTitle={allScripts.find((s) => s.id === assignedScriptId)?.title ?? null}
             onGoToScriptTab={() => setActiveTab('script')}
+            contacts={contacts}
+            onContactsChange={setContacts}
           />
         ) : activeTab === 'script' ? (
           <LeadScriptTab

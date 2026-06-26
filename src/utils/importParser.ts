@@ -333,15 +333,23 @@ function transformRows(
     const rawType = (row.type_col || row.category_of_lead || '').toLowerCase().trim()
     const lead_type: LeadType | null = LEAD_TYPE_MAP[rawType] ?? options.defaultLeadType ?? null
 
-    // Build structured notes from sheet-specific columns
+    // Build structured notes from sheet-specific non-contact columns only
     const noteParts: string[] = []
     if (row.type_col) noteParts.push(`Type: ${row.type_col}`)
     if (row.category_of_lead) noteParts.push(`Category: ${row.category_of_lead}`)
-    if (row.founder_name) noteParts.push(`Founder: ${row.founder_name}`)
-    if (row.founder_number) noteParts.push(`Founder Phone: ${row.founder_number}`)
-    if (row.founder_email) noteParts.push(`Founder Email: ${row.founder_email}`)
-    if (row.founder_linkedin) noteParts.push(`Founder LinkedIn: ${row.founder_linkedin}`)
     if (row.num_teachers) noteParts.push(`No. of Teachers: ${row.num_teachers}`)
+
+    // Build contact from founder fields (goes to lead_contacts table, not notes)
+    const hasContact = row.founder_name || row.founder_email || row.founder_number || row.founder_linkedin
+    const contacts = hasContact
+      ? [{
+          name: row.founder_name?.trim() || null,
+          designation: null,
+          phone: row.founder_number?.trim() || null,
+          email: row.founder_email?.trim() || null,
+          linkedin: row.founder_linkedin?.trim() || null,
+        }]
+      : undefined
 
     valid.push({
       name,
@@ -360,6 +368,7 @@ function transformRows(
       call_count,
       message_count,
       email_count,
+      _contacts: contacts,
     })
   })
 

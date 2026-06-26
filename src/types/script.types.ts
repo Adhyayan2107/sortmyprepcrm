@@ -55,6 +55,6 @@ export interface ScriptQuestion {
   script_id: string
   question: string
   answer: string | null
-  sort_order: number
+  position: number
   created_at: string
 }

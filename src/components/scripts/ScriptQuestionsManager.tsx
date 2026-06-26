@@ -133,9 +133,9 @@ export default function ScriptQuestionsManager({ scriptId }: { scriptId: string 
     if (!over || active.id === over.id) return
     const oldIndex = questions.findIndex((q) => q.id === active.id)
     const newIndex = questions.findIndex((q) => q.id === over.id)
-    const reordered = arrayMove(questions, oldIndex, newIndex).map((q, i) => ({ ...q, sort_order: i + 1 }))
+    const reordered = arrayMove(questions, oldIndex, newIndex).map((q, i) => ({ ...q, position: i + 1 }))
     setQuestions(reordered)
-    reorderQuestions(reordered.map((q) => ({ id: q.id, sort_order: q.sort_order })))
+    reorderQuestions(reordered.map((q) => ({ id: q.id, position: q.position })))
   }
 
   return (

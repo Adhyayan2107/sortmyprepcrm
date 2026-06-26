@@ -2,8 +2,9 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
+import { signOut } from '@/services/userService'
 import { CONTACT_TYPES } from '@/lib/constants'
 
 type NavChild = { label: string; href: string; dot?: string }
@@ -146,6 +147,7 @@ const ImportIcon = () => (
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user } = useUser()
   const isAdmin = user?.role === 'admin'
 
@@ -162,6 +164,12 @@ export default function Sidebar() {
       localStorage.setItem('sidebar-collapsed', String(next))
       return next
     })
+  }
+
+  async function handleSignOut() {
+    await signOut()
+    router.push('/login')
+    router.refresh()
   }
 
   const navItems: NavItem[] = BASE_NAV.map((item) => {
@@ -184,39 +192,38 @@ export default function Sidebar() {
       }`}
     >
       {/* Logo + collapse toggle */}
-      {collapsed ? (
-        <div className="h-14 flex flex-col items-center justify-center gap-1.5 border-b border-slate-200 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm">
+      <div className={`h-14 flex items-center border-b border-slate-200 shrink-0 ${collapsed ? 'justify-center px-2' : 'justify-between px-3'}`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm shrink-0">
             <span className="text-white text-[11px] font-bold tracking-tight">SP</span>
           </div>
-          <button
-            onClick={toggleCollapse}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
-            title="Expand sidebar"
-          >
-            <CollapseIcon collapsed={collapsed} />
-          </button>
-        </div>
-      ) : (
-        <div className="px-3 h-14 flex items-center justify-between border-b border-slate-200 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-sm shrink-0">
-              <span className="text-white text-[11px] font-bold tracking-tight">SP</span>
-            </div>
+          {!collapsed && (
             <span className="text-[14px] font-semibold text-slate-900 tracking-tight truncate">sortmyprepCRM</span>
-          </div>
+          )}
+        </div>
+        {!collapsed && (
           <button
             onClick={toggleCollapse}
-            className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 p-0.5 rounded"
+            className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 p-1 rounded-md hover:bg-slate-100"
             title="Collapse sidebar"
           >
             <CollapseIcon collapsed={collapsed} />
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
+        {/* Expand button in collapsed mode */}
+        {collapsed && (
+          <button
+            onClick={toggleCollapse}
+            className="w-full flex items-center justify-center p-2 mb-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+            title="Expand sidebar"
+          >
+            <CollapseIcon collapsed={collapsed} />
+          </button>
+        )}
         {navItems.map((item) => {
           const baseHref = item.href.split('?')[0]
           const active = pathname === baseHref || (baseHref !== '/' && pathname.startsWith(baseHref))
@@ -225,9 +232,9 @@ export default function Sidebar() {
               <Link
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] font-medium transition-colors ${
+                className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13.5px] font-medium transition-colors ${
                   active
-                    ? 'bg-slate-100 text-slate-900'
+                    ? 'bg-[#EFF6FF] text-[#1D4ED8]'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 } ${collapsed ? 'justify-center px-0' : ''}`}
               >
@@ -262,19 +269,35 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      {/* Footer — user identity strip */}
+      {/* Footer — user identity + sign out */}
       {user && (
-        <div className={`px-3 py-3 border-t border-slate-200 flex items-center gap-2.5 ${collapsed ? 'justify-center px-2' : ''}`}>
-          <div
-            className="w-7 h-7 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0"
-            title={collapsed ? (user.name ?? 'User') : undefined}
-          >
-            {(user.name ?? 'U').split(' ').map((p) => p[0] ?? '').slice(0, 2).join('').toUpperCase()}
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="text-[12.5px] font-medium text-slate-900 truncate">{user.name ?? 'User'}</p>
-              <p className="text-[11px] text-slate-400 truncate capitalize">{user.role ?? 'rep'}</p>
+        <div className={`border-t border-slate-200 shrink-0 ${collapsed ? 'px-2 py-3 flex justify-center' : 'px-3 py-3'}`}>
+          {collapsed ? (
+            <button
+              onClick={handleSignOut}
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white text-[10px] font-bold flex items-center justify-center hover:opacity-80 transition-opacity"
+              title={`${user.name ?? 'User'} — Sign out`}
+            >
+              {(user.name ?? 'U').split(' ').map((p) => p[0] ?? '').slice(0, 2).join('').toUpperCase()}
+            </button>
+          ) : (
+            <div className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                {(user.name ?? 'U').split(' ').map((p) => p[0] ?? '').slice(0, 2).join('').toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12.5px] font-semibold text-slate-900 truncate leading-tight">{user.name ?? 'User'}</p>
+                <p className="text-[11px] text-slate-400 truncate capitalize leading-tight">{user.role ?? 'rep'}</p>
+              </div>
+              <button
+                onClick={handleSignOut}
+                title="Sign out"
+                className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50 opacity-0 group-hover:opacity-100"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </div>
           )}
         </div>

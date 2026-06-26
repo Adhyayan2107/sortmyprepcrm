@@ -14,6 +14,7 @@ interface ImportSummary {
   inserted: number
   duplicates: string[]
   errors: Array<{ row: number; reason: string }>
+  contacts_added: number
 }
 
 const TYPE_COLORS: Record<LeadType, string> = {
@@ -86,6 +87,7 @@ export default function ImportPage() {
       inserted: result.data.inserted,
       duplicates: result.data.duplicates,
       errors: parseErrors,
+      contacts_added: result.data.contacts_added,
     })
     setStep('done')
     setImporting(false)
@@ -330,6 +332,9 @@ export default function ImportPage() {
           <h2 className="text-xl font-bold text-emerald-600">Import Complete</h2>
           <div className="text-gray-600 space-y-1">
             <p><span className="font-semibold text-gray-900">{summary.inserted}</span> leads added</p>
+            {summary.contacts_added > 0 && (
+              <p><span className="font-semibold text-gray-900">{summary.contacts_added}</span> contacts added to existing leads</p>
+            )}
             {summary.duplicates.length > 0 && (
               <p><span className="font-semibold text-gray-900">{summary.duplicates.length}</span> duplicates skipped</p>
             )}

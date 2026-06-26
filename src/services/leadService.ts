@@ -217,12 +217,17 @@ export async function bulkInsertLeads(
     const { _contacts, ...leadData } = lead
     const key = `${lead.name.toLowerCase()}::${(lead.country ?? '').toLowerCase()}`
 
-    if (existingMap.has(key) || seenInBatch.has(key)) {
+    if (existingMap.has(key)) {
       duplicates.push(lead.name)
-      // If lead already exists and has contacts, queue them for upsert
       const existingId = existingMap.get(key)
       if (existingId && _contacts?.length) {
         contactsForExisting.push({ lead_id: existingId, contacts: _contacts })
+      }
+    } else if (seenInBatch.has(key)) {
+      // Same school, another contact row — accumulate contacts, don't count as duplicate
+      if (_contacts?.length) {
+        const entry = toInsertContacts.find(e => e.key === key)
+        if (entry) entry.contacts = [...(entry.contacts ?? []), ..._contacts]
       }
     } else {
       seenInBatch.add(key)

@@ -423,7 +423,7 @@ export default function CallPage() {
             {/* Tabs + Change Script */}
             <div className="flex items-center border-b border-slate-200 bg-white shrink-0 px-2">
               <div className="flex flex-1">
-                {([['script', 'Call Script'], ['notes', 'Call Notes'], ['questions', 'Questions']] as const).map(([t, label]) => (
+                {([['script', 'Call Script'], ['questions', 'Questions'], ['notes', 'Call Notes']] as const).map(([t, label]) => (
                   <button
                     key={t}
                     onClick={() => setScriptTab(t)}

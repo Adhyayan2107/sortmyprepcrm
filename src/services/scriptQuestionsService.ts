@@ -17,7 +17,7 @@ export async function addQuestion(scriptId: string, question: string, answer: st
   const supabase = createClient()
   const { data: existing } = await supabase
     .from('script_questions')
-    .select('sort_order')
+    .select('*')
     .eq('script_id', scriptId)
     .order('sort_order', { ascending: false })
     .limit(1)

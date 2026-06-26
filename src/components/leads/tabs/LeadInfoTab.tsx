@@ -1,11 +1,13 @@
 'use client'
 
-import { Lead } from '@/types/lead.types'
+import { useState } from 'react'
+import { Lead, LeadContact } from '@/types/lead.types'
 import { PipelineStage } from '@/lib/constants'
 import { AppUser } from '@/types/user.types'
 import { PIPELINE_STAGES } from '@/lib/constants'
 import StageBadge from '@/components/ui/StageBadge'
 import { formatDate, formatCurriculum } from '@/utils/formatters'
+import { addContact, deleteContact } from '@/services/leadContactService'
 
 interface Props {
   lead: Lead
@@ -20,6 +22,8 @@ interface Props {
   onCountChange?: (field: 'call_count' | 'message_count' | 'email_count', delta: 1 | -1) => void
   assignedScriptTitle?: string | null
   onGoToScriptTab?: () => void
+  contacts?: LeadContact[]
+  onContactsChange?: (contacts: LeadContact[]) => void
 }
 
 function formatCallbackDate(raw: string): string {
@@ -178,7 +182,129 @@ function parseImportedNotes(notes: string | null) {
   return { founderRows, freeText: freeLines.length ? freeLines.join('\n') : null }
 }
 
-export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, lastCallOutcome, onStageChange, onAssignmentChange, onCountChange, assignedScriptTitle, onGoToScriptTab }: Props) {
+function ContactsSection({ leadId, contacts, onContactsChange }: {
+  leadId: string
+  contacts: LeadContact[]
+  onContactsChange: (c: LeadContact[]) => void
+}) {
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ name: '', designation: '', phone: '', email: '', linkedin: '' })
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function handleAdd() {
+    if (!form.name && !form.email && !form.phone) return
+    setSaving(true)
+    const res = await addContact({
+      lead_id: leadId,
+      name: form.name.trim() || null,
+      designation: form.designation.trim() || null,
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      linkedin: form.linkedin.trim() || null,
+    })
+    if (res.success) {
+      onContactsChange([...contacts, res.data])
+      setForm({ name: '', designation: '', phone: '', email: '', linkedin: '' })
+      setShowForm(false)
+    }
+    setSaving(false)
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id)
+    const res = await deleteContact(id)
+    if (res.success) onContactsChange(contacts.filter(c => c.id !== id))
+    setDeletingId(null)
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Contacts</p>
+      <div className="space-y-2">
+        {contacts.map(c => (
+          <div key={c.id} className="bg-slate-50 rounded-lg px-3 py-2.5 relative group">
+            <button
+              onClick={() => handleDelete(c.id)}
+              disabled={deletingId === c.id}
+              className="absolute top-2 right-2 text-slate-300 hover:text-red-400 transition-colors disabled:opacity-40"
+              title="Remove contact"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+            <div className="pr-6">
+              <p className="text-sm font-medium text-gray-800">
+                {c.name || <span className="text-gray-400 italic">Unnamed</span>}
+                {c.designation && (
+                  <span className="ml-1.5 text-xs font-normal text-gray-400">· {c.designation}</span>
+                )}
+              </p>
+              {c.phone && <p className="text-xs text-gray-500 mt-0.5">{c.phone}</p>}
+              {c.email && <p className="text-xs text-gray-500">{c.email}</p>}
+              {c.linkedin && (
+                <a href={c.linkedin} target="_blank" rel="noreferrer"
+                  className="text-xs text-[var(--color-brand-accent)] hover:underline break-all">
+                  LinkedIn
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {contacts.length === 0 && !showForm && (
+          <p className="text-xs text-gray-400 italic">No contacts yet</p>
+        )}
+
+        {showForm ? (
+          <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-white">
+            {[
+              { key: 'name', placeholder: 'Name' },
+              { key: 'designation', placeholder: 'Designation (e.g. Principal)' },
+              { key: 'phone', placeholder: 'Phone' },
+              { key: 'email', placeholder: 'Email' },
+              { key: 'linkedin', placeholder: 'LinkedIn URL' },
+            ].map(({ key, placeholder }) => (
+              <input
+                key={key}
+                type="text"
+                placeholder={placeholder}
+                value={form[key as keyof typeof form]}
+                onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                className="w-full border border-gray-200 rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-accent)]"
+              />
+            ))}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleAdd}
+                disabled={saving || (!form.name && !form.email && !form.phone)}
+                className="px-3 py-1.5 rounded-md bg-[var(--color-brand-accent)] text-white text-xs font-semibold hover:bg-[var(--color-brand-primary)] disabled:opacity-50 transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                onClick={() => setShowForm(false)}
+                className="px-3 py-1.5 rounded-md border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowForm(true)}
+            className="w-full border border-dashed border-gray-200 rounded-lg py-1.5 text-xs text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
+          >
+            + Add contact
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCallNote, lastCallAt, lastCallOutcome, onStageChange, onAssignmentChange, onCountChange, assignedScriptTitle, onGoToScriptTab, contacts = [], onContactsChange }: Props) {
   const { founderRows, freeText } = parseImportedNotes(lead.notes)
 
   return (
@@ -319,6 +445,14 @@ export default function LeadInfoTab({ lead, teamUsers, saving, isAdmin, lastCall
           />
         </div>
       </div>
+
+      {onContactsChange && (
+        <ContactsSection
+          leadId={lead.id}
+          contacts={contacts}
+          onContactsChange={onContactsChange}
+        />
+      )}
 
       {founderRows.length > 0 && (
         <div>

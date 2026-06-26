@@ -245,7 +245,6 @@ export default function LeadDetailPanel({ leadId, onClose, onStageChange, onView
         ) : !lead ? (
           <p className="text-center text-gray-400 mt-12">Lead not found</p>
         ) : activeTab === 'info' ? (
-          // @ts-ignore
           <LeadInfoTab
             lead={lead}
             teamUsers={teamUsers}

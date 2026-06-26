@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase'
-import { Lead, LeadInsert, LeadListRow, LeadMapPin } from '@/types/lead.types'
+import { Lead, LeadInsert, LeadContactInsert, LeadListRow, LeadMapPin } from '@/types/lead.types'
 import { PipelineStage } from '@/lib/constants'
 import { ServiceResult } from '@/types/api.types'
 import { TABLES } from '@/lib/constants'
@@ -190,40 +190,85 @@ export async function incrementLeadCount(
 
 export async function bulkInsertLeads(
   leads: LeadInsert[]
-): Promise<ServiceResult<{ inserted: number; duplicates: string[] }>> {
+): Promise<ServiceResult<{ inserted: number; duplicates: string[]; contacts_added: number }>> {
   const supabase = createClient()
 
+  // Fetch existing leads: name, country, id
   const { data: existing, error: existingError } = await supabase
     .from(TABLES.LEADS)
-    .select('name, country')
-
+    .select('id, name, country')
   if (existingError) return { success: false, error: existingError.message }
 
-  const existingSet = new Set(
-    (existing ?? []).map((r: { name: string; country: string }) => `${r.name.toLowerCase()}::${r.country.toLowerCase()}`)
+  // Map "name::country" → lead id for existing leads
+  const existingMap = new Map<string, string>(
+    (existing ?? []).map((r: { id: string; name: string; country: string }) => [
+      `${r.name.toLowerCase()}::${r.country.toLowerCase()}`,
+      r.id,
+    ])
   )
 
-  // Deduplicate within the incoming batch itself
   const seenInBatch = new Set<string>()
-  const toInsert: LeadInsert[] = []
+  const toInsert: Omit<LeadInsert, '_contacts'>[] = []
+  const toInsertContacts: Array<{ key: string; contacts: LeadInsert['_contacts'] }> = []
   const duplicates: string[] = []
+  const contactsForExisting: Array<{ lead_id: string; contacts: LeadInsert['_contacts'] }> = []
 
   for (const lead of leads) {
+    const { _contacts, ...leadData } = lead
     const key = `${lead.name.toLowerCase()}::${(lead.country ?? '').toLowerCase()}`
-    if (existingSet.has(key) || seenInBatch.has(key)) {
+
+    if (existingMap.has(key) || seenInBatch.has(key)) {
       duplicates.push(lead.name)
+      // If lead already exists and has contacts, queue them for upsert
+      const existingId = existingMap.get(key)
+      if (existingId && _contacts?.length) {
+        contactsForExisting.push({ lead_id: existingId, contacts: _contacts })
+      }
     } else {
       seenInBatch.add(key)
-      toInsert.push(lead)
+      toInsert.push(leadData)
+      toInsertContacts.push({ key, contacts: _contacts })
     }
   }
 
-  if (toInsert.length === 0) {
-    return { success: true, data: { inserted: 0, duplicates } }
+  // Insert new leads and get back their ids
+  let insertedCount = 0
+  if (toInsert.length > 0) {
+    const { data: inserted, error } = await supabase
+      .from(TABLES.LEADS)
+      .insert(toInsert)
+      .select('id, name, country')
+    if (error) return { success: false, error: error.message }
+    insertedCount = inserted?.length ?? 0
+
+    // Build contacts rows for newly inserted leads
+    const newContactRows: LeadContactInsert[] = []
+    for (const row of inserted ?? []) {
+      const key = `${row.name.toLowerCase()}::${row.country.toLowerCase()}`
+      const entry = toInsertContacts.find(e => e.key === key)
+      if (entry?.contacts?.length) {
+        for (const c of entry.contacts) {
+          newContactRows.push({ lead_id: row.id, ...c })
+        }
+      }
+    }
+    if (newContactRows.length > 0) {
+      await supabase
+        .from(TABLES.LEAD_CONTACTS)
+        .upsert(newContactRows, { onConflict: 'lead_id,email', ignoreDuplicates: true })
+    }
   }
 
-  const { error } = await supabase.from(TABLES.LEADS).insert(toInsert)
-  if (error) return { success: false, error: error.message }
+  // Upsert contacts for already-existing leads
+  let contacts_added = 0
+  for (const { lead_id, contacts } of contactsForExisting) {
+    if (!contacts?.length) continue
+    const rows: LeadContactInsert[] = contacts.map(c => ({ lead_id, ...c }))
+    const { error } = await supabase
+      .from(TABLES.LEAD_CONTACTS)
+      .upsert(rows, { onConflict: 'lead_id,email', ignoreDuplicates: true })
+    if (!error) contacts_added += rows.length
+  }
 
-  return { success: true, data: { inserted: toInsert.length, duplicates } }
+  return { success: true, data: { inserted: insertedCount, duplicates, contacts_added } }
 }

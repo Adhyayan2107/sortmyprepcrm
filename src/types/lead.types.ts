@@ -29,6 +29,19 @@ export interface Lead {
   last_activity: string
 }
 
+export interface LeadContact {
+  id: string
+  lead_id: string
+  name: string | null
+  designation: string | null
+  phone: string | null
+  email: string | null
+  linkedin: string | null
+  created_at: string
+}
+
+export type LeadContactInsert = Omit<LeadContact, 'id' | 'created_at'>
+
 export interface LeadMapPin {
   id: string
   name: string
@@ -71,5 +84,13 @@ export interface LeadInsert {
   call_count?: number
   message_count?: number
   email_count?: number
+  // Stripped before DB insert — used only to carry contacts through the import pipeline
+  _contacts?: Array<{
+    name: string | null
+    designation: string | null
+    phone: string | null
+    email: string | null
+    linkedin: string | null
+  }>
 }
 

@@ -4,6 +4,7 @@ export const TABLES = {
   ACTIVITY_LOG: 'activity_log',
   SCRIPTS: 'scripts',
   SCRIPT_RATINGS: 'script_ratings',
+  LEAD_CONTACTS: 'lead_contacts',
 } as const
 
 export const PIPELINE_STAGES = [

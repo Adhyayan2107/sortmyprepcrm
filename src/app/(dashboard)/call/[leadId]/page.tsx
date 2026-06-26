@@ -470,7 +470,7 @@ export default function CallPage() {
                   </div>
                 )
               ) : scriptTab === 'questions' ? (
-                <CallQuestionsTab scriptId={script?.id ?? null} isAdmin={user?.role === 'admin'} />
+                <CallQuestionsTab scriptId={script?.id ?? null} />
               ) : (
                 <div className="max-w-2xl mx-auto">
                   <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Call Notes</p>

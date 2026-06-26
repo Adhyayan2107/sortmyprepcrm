@@ -9,6 +9,7 @@ import { useUser } from '@/hooks/useUser'
 import StarRating from '@/components/ui/StarRating'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import ScriptDocUpload from '@/components/scripts/ScriptDocUpload'
+import ScriptQuestionsManager from '@/components/scripts/ScriptQuestionsManager'
 
 export default function ScriptDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -178,6 +179,14 @@ export default function ScriptDetailPage() {
             </pre>
           )}
         </div>
+
+        {/* Questions */}
+        {user?.role === 'admin' && (
+          <div className="border-t border-gray-200 pt-5">
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Questions</p>
+            <ScriptQuestionsManager scriptId={script.id} />
+          </div>
+        )}
 
         {/* Document */}
         <div className="border-t border-gray-200 pt-5">

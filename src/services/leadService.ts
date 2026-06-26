@@ -232,6 +232,7 @@ export async function bulkInsertLeads(
   }
 
   // Insert new leads and get back their ids
+  let contacts_added = 0
   let insertedCount = 0
   if (toInsert.length > 0) {
     const { data: inserted, error } = await supabase
@@ -253,14 +254,14 @@ export async function bulkInsertLeads(
       }
     }
     if (newContactRows.length > 0) {
-      await supabase
+      const { error } = await supabase
         .from(TABLES.LEAD_CONTACTS)
         .upsert(newContactRows, { onConflict: 'lead_id,email', ignoreDuplicates: true })
+      if (!error) contacts_added += newContactRows.length
     }
   }
 
   // Upsert contacts for already-existing leads
-  let contacts_added = 0
   for (const { lead_id, contacts } of contactsForExisting) {
     if (!contacts?.length) continue
     const rows: LeadContactInsert[] = contacts.map(c => ({ lead_id, ...c }))

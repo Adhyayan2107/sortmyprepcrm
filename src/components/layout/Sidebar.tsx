@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { signOut } from '@/services/userService'
-import { CONTACT_TYPES } from '@/lib/constants'
 
 type NavChild = { label: string; href: string; dot?: string }
 
@@ -17,6 +16,15 @@ type NavItem = {
 }
 
 const ICON_CLS = 'w-[18px] h-[18px] shrink-0'
+
+const SCRIPT_NAV_CHILDREN: NavChild[] = [
+  { label: 'School',           href: '/scripts?type=School',           dot: 'bg-violet-500' },
+  { label: 'Coaching Centers', href: '/scripts?type=Coaching+Center',  dot: 'bg-amber-500' },
+  { label: 'Aggregator',       href: '/scripts?type=Aggregator',       dot: 'bg-cyan-500' },
+  { label: 'Private Teacher',  href: '/scripts?type=Private+Teacher',  dot: 'bg-emerald-500' },
+  { label: 'Career Counsellor',href: '/scripts?type=Career+Counsellor',dot: 'bg-rose-500' },
+  { label: 'Parent',           href: '/scripts?type=Parent',           dot: 'bg-blue-400' },
+]
 
 const ADMIN_LEADS_CHILDREN: NavChild[] = [
   { label: 'All Leads',         href: '/leads' },
@@ -58,10 +66,7 @@ const BASE_NAV: NavItem[] = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
-    children: CONTACT_TYPES.map((type) => ({
-      label: type,
-      href: `/scripts?type=${encodeURIComponent(type)}`,
-    })),
+    children: SCRIPT_NAV_CHILDREN,
   },
   {
     href: '/analytics', label: 'Analytics',

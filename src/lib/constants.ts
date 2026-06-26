@@ -24,10 +24,10 @@ export const LEAD_SOURCES = ['Google Maps', 'Directory', 'Manual'] as const
 export const CONTACT_TYPES = [
   'School',
   'Coaching Center',
-  'Private Teacher',
-  'Parent',
-  'Career Counsellor',
   'Aggregator',
+  'Private Teacher',
+  'Career Counsellor',
+  'Parent',
 ] as const
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number]

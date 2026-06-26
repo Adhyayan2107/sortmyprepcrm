@@ -27,6 +27,7 @@ export const CONTACT_TYPES = [
   'Private Teacher',
   'Parent',
   'Career Counsellor',
+  'Aggregator',
 ] as const
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number]

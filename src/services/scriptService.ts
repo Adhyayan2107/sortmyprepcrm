@@ -117,13 +117,10 @@ export async function rateScript(
 ): Promise<ServiceResult<ScriptRating>> {
   const supabase = createClient()
 
-  // upsert: one rating per user per script
+  await supabase.from(TABLES.SCRIPT_RATINGS).delete().match({ script_id: scriptId, rated_by: ratedBy })
   const { data, error } = await supabase
     .from(TABLES.SCRIPT_RATINGS)
-    .upsert(
-      { script_id: scriptId, rated_by: ratedBy, rating, note: note ?? null },
-      { onConflict: 'script_id,rated_by' }
-    )
+    .insert({ script_id: scriptId, rated_by: ratedBy, rating, note: note ?? null })
     .select()
     .single()
 

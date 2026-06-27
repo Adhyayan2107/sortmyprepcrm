@@ -108,6 +108,13 @@ const LEAD_TYPE_MAP: Record<string, LeadType> = {
   directory: 'Aggregators',
   directories: 'Aggregators',
   platform: 'Aggregators',
+  // extra variants from source files
+  'tutoring center': 'Tuition Center',
+  'tutoring centre': 'Tuition Center',
+  'tuition centers': 'Tuition Center',
+  'individual teacher': 'Private Teacher',
+  'individual teachers': 'Private Teacher',
+  'day school': 'School',
 }
 
 const STAGE_MAP: Record<string, PipelineStage> = {

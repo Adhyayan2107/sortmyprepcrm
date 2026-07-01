@@ -40,11 +40,22 @@ export default function MapPage() {
     [pins, isAdmin, user]
   )
 
-  const countries = useMemo(() => [...new Set(visiblePins.map((p) => p.country))].sort(), [visiblePins])
+  const locations = useMemo(() => {
+    const hasIndia = visiblePins.some((p) => p.country === 'India')
+    const nonIndia = [...new Set(visiblePins.filter((p) => p.country !== 'India').map((p) => p.country))].sort()
+    const indiaCities = [...new Set(visiblePins.filter((p) => p.country === 'India' && p.city).map((p) => p.city!))].sort()
+    return { hasIndia, nonIndia, indiaCities }
+  }, [visiblePins])
 
   const filteredPins = useMemo(() => {
     return visiblePins.filter((p) => {
-      if (filters.country && p.country !== filters.country) return false
+      if (filters.country) {
+        if (filters.country.startsWith('India:')) {
+          if (p.country !== 'India' || p.city !== filters.country.slice(6)) return false
+        } else {
+          if (p.country !== filters.country) return false
+        }
+      }
       if (filters.stage !== 'All' && p.stage !== filters.stage) return false
       return true
     })
@@ -83,7 +94,7 @@ export default function MapPage() {
         <LoadingSpinner />
       ) : (
         <>
-          <MapFilterBar filters={filters} onChange={setFilters} countries={countries} users={users} />
+          <MapFilterBar filters={filters} onChange={setFilters} locations={locations} users={users} />
           {visiblePins.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <div className="bg-white rounded-xl shadow-lg border border-slate-200 px-6 py-8 text-center max-w-sm mx-4">

@@ -4,12 +4,18 @@ import { PipelineStage } from '@/lib/constants'
 import { AppUser } from '@/types/user.types'
 import { PIPELINE_STAGES } from '@/lib/constants'
 
+interface Locations {
+  hasIndia: boolean
+  nonIndia: string[]
+  indiaCities: string[]
+}
+
 interface LeadsFilterBarProps {
   search: string
   stageFilter: PipelineStage | 'All'
   countryFilter: string
   assignedFilter: string
-  countries: string[]
+  locations: Locations
   users: AppUser[]
   onSearch: (v: string) => void
   onStage: (v: PipelineStage | 'All') => void
@@ -21,7 +27,7 @@ const SELECT_CLS = 'border border-slate-200 rounded-lg px-3 py-2 text-sm focus:o
 
 export default function LeadsFilterBar({
   search, stageFilter, countryFilter, assignedFilter,
-  countries, users, onSearch, onStage, onCountry, onAssigned,
+  locations, users, onSearch, onStage, onCountry, onAssigned,
 }: LeadsFilterBarProps) {
   const hasFilters = search || stageFilter !== 'All' || countryFilter || assignedFilter
 
@@ -47,8 +53,14 @@ export default function LeadsFilterBar({
           {PIPELINE_STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={countryFilter} onChange={(e) => onCountry(e.target.value)} className={SELECT_CLS}>
-          <option value="">All Countries</option>
-          {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="">All Locations</option>
+          {locations.hasIndia && (
+            <optgroup label="India">
+              <option value="India">All India</option>
+              {locations.indiaCities.map((c) => <option key={c} value={`India:${c}`}>{c}</option>)}
+            </optgroup>
+          )}
+          {locations.nonIndia.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={assignedFilter} onChange={(e) => onAssigned(e.target.value)} className={SELECT_CLS}>
           <option value="">All Reps</option>

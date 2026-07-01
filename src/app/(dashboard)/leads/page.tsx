@@ -75,15 +75,21 @@ function LeadsPageInner() {
   // Reset selection when URL-driven filters change
   useEffect(() => { setSelected(new Set()) }, [viewMine, typeFilter])
 
-  const countries = useMemo(
-    () => [...new Set(rows.map((r) => r.country))].sort(),
-    [rows]
-  )
+  const locations = useMemo(() => {
+    const hasIndia = rows.some((r) => r.country === 'India')
+    const nonIndia = [...new Set(rows.filter((r) => r.country !== 'India').map((r) => r.country))].sort()
+    const indiaCities = [...new Set(rows.filter((r) => r.country === 'India' && r.city).map((r) => r.city!))].sort()
+    return { hasIndia, nonIndia, indiaCities }
+  }, [rows])
 
   const filtered = useMemo(() => rows.filter((r) => {
     const matchSearch = !search || r.name.toLowerCase().includes(search.toLowerCase()) || r.country.toLowerCase().includes(search.toLowerCase())
     const matchStage = stageFilter === 'All' || r.stage === stageFilter
-    const matchCountry = !countryFilter || r.country === countryFilter
+    const matchCountry = !countryFilter || (
+      countryFilter.startsWith('India:')
+        ? r.country === 'India' && r.city === countryFilter.slice(6)
+        : r.country === countryFilter
+    )
     const matchAssigned = !assignedFilter || r.assigned_to === assignedFilter
     const matchMine = !viewMine || r.assigned_to === currentUser?.id
     const matchType = !typeFilter || r.lead_type === typeFilter
@@ -165,7 +171,7 @@ function LeadsPageInner() {
 
       <LeadsFilterBar
         search={search} stageFilter={stageFilter} countryFilter={countryFilter} assignedFilter={assignedFilter}
-        countries={countries} users={users}
+        locations={locations} users={users}
         onSearch={setSearch} onStage={setStageFilter} onCountry={setCountryFilter} onAssigned={setAssignedFilter}
       />
 

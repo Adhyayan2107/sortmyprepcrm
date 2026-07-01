@@ -12,10 +12,16 @@ export interface MapFilters {
   assignedTo: string
 }
 
+interface Locations {
+  hasIndia: boolean
+  nonIndia: string[]
+  indiaCities: string[]
+}
+
 interface MapFilterBarProps {
   filters: MapFilters
   onChange: (filters: MapFilters) => void
-  countries: string[]
+  locations: Locations
   users: AppUser[]
 }
 
@@ -96,7 +102,7 @@ function StageSelect({
   )
 }
 
-export default function MapFilterBar({ filters, onChange, countries, users }: MapFilterBarProps) {
+export default function MapFilterBar({ filters, onChange, locations, users }: MapFilterBarProps) {
   function set<K extends keyof MapFilters>(key: K, value: MapFilters[K]) {
     onChange({ ...filters, [key]: value })
   }
@@ -104,10 +110,14 @@ export default function MapFilterBar({ filters, onChange, countries, users }: Ma
   return (
     <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 bg-white/95 backdrop-blur-sm rounded-xl p-1.5 shadow-sm border border-slate-200">
       <select value={filters.country} onChange={(e) => set('country', e.target.value)} className={SELECT_CLS}>
-        <option value="">All Countries</option>
-        {countries.map((c) => (
-          <option key={c} value={c}>{c}</option>
-        ))}
+        <option value="">All Locations</option>
+        {locations.hasIndia && (
+          <optgroup label="India">
+            <option value="India">All India</option>
+            {locations.indiaCities.map((c) => <option key={c} value={`India:${c}`}>{c}</option>)}
+          </optgroup>
+        )}
+        {locations.nonIndia.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
 
       <StageSelect

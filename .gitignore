@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .superpowers/sdd/*.md
+
+# claude code internals
+.claude/worktrees/
